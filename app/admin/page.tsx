@@ -1,5 +1,6 @@
 import { CyberCard } from "@/components/ui/cyber-card";
 import { CyberButton } from "@/components/ui/cyber-button";
+import { getActiveMcpTokenCount } from "@/lib/admin/mcp-tokens";
 import { getDraftPostCount, getPublishedPostCount } from "@/lib/admin/posts";
 import { hasAdminWhitelistConfigured, isAuthConfigured, isGiscusConfigured, isRedisConfigured } from "@/lib/env";
 import { isDatabaseConfigured } from "@/lib/db/client";
@@ -8,11 +9,12 @@ import { siteConfig } from "@/lib/site";
 import { getTotalViewCount } from "@/lib/views";
 
 export default async function AdminPage() {
-  const [publishedCount, draftCount, siteStats, totalViews] = await Promise.all([
+  const [publishedCount, draftCount, siteStats, totalViews, activeMcpTokens] = await Promise.all([
     getPublishedPostCount(),
     getDraftPostCount(),
     getSiteStats(),
     getTotalViewCount(),
+    getActiveMcpTokenCount(),
   ]);
   const hasDb = isDatabaseConfigured();
   const hasAuth = isAuthConfigured();
@@ -66,6 +68,9 @@ export default async function AdminPage() {
           <CyberButton href="/admin/tags" variant="outline">
             管理标签
           </CyberButton>
+          <CyberButton href="/admin/tokens" variant="outline">
+            管理 Tokens
+          </CyberButton>
           <CyberButton href="/admin/admins" variant="outline">
             管理管理员
           </CyberButton>
@@ -106,6 +111,21 @@ export default async function AdminPage() {
           </p>
           <CyberButton href="/admin/admins" variant="outline" className="w-full">
             Open Admins
+          </CyberButton>
+        </CyberCard>
+
+        <CyberCard hoverEffect className="space-y-3">
+          <p className="font-heading text-lg uppercase tracking-[0.14em] text-foreground">
+            MCP Tokens
+          </p>
+          <p className="text-sm text-mutedForeground">
+            管理本地写作客户端的发布 token，支持生成、查看最近使用时间与撤销。
+          </p>
+          <p className="font-mono text-sm text-accent">
+            {activeMcpTokens} active token{activeMcpTokens === 1 ? "" : "s"}
+          </p>
+          <CyberButton href="/admin/tokens" variant="outline" className="w-full">
+            Open Tokens
           </CyberButton>
         </CyberCard>
       </div>

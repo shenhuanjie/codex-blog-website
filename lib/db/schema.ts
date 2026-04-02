@@ -51,3 +51,20 @@ export const adminUsers = pgTable(
   },
   (table) => [uniqueIndex("admin_users_github_login_unique").on(table.githubLogin)]
 );
+
+export const mcpTokens = pgTable(
+  "mcp_tokens",
+  {
+    id: serial("id").primaryKey(),
+    label: varchar("label", { length: 120 }).notNull(),
+    tokenPrefix: varchar("token_prefix", { length: 24 }).notNull(),
+    tokenHash: varchar("token_hash", { length: 64 }).notNull(),
+    createdBy: varchar("created_by", { length: 120 }).notNull(),
+    lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("mcp_tokens_token_hash_unique").on(table.tokenHash),
+  ]
+);

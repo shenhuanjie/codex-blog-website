@@ -3,7 +3,10 @@
     "neonstack-blog-local": {
       "command": "npm",
       "args": ["run", "mcp:blog"],
-      "cwd": "/Users/shenhuanjie/Documents/Projects/codex/codex-blog-website"
+      "cwd": "/Users/shenhuanjie/Documents/Projects/codex/codex-blog-website",
+      "env": {
+        "BLOG_MCP_TOKEN": "paste-token-generated-in-admin-here"
+      }
     }
   }
 }

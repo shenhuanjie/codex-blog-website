@@ -91,6 +91,9 @@ export default async function AdminLayout({
             <CyberButton href="/admin/tags" variant="outline">
               Tags
             </CyberButton>
+            <CyberButton href="/admin/tokens" variant="outline">
+              Tokens
+            </CyberButton>
             <CyberButton href="/admin/admins" variant="outline">
               Admins
             </CyberButton>

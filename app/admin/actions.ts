@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { addAdminUser, removeAdminUser, getAdminUsersCount } from "@/lib/admin/admin-users";
+import { createMcpToken, revokeMcpToken } from "@/lib/admin/mcp-tokens";
 import { mergeTags, removeTag, renameTag } from "@/lib/admin/tags";
 import { getAdminSession } from "@/lib/auth/session";
 import { upsertPost, removePost } from "@/lib/admin/posts";
@@ -41,6 +42,13 @@ function redirectWithFeedback(
 
   redirect(`${path}?${params.toString()}`);
 }
+
+export type CreateMcpTokenActionState = {
+  kind: "idle" | "success" | "error";
+  message?: string;
+  token?: string;
+  tokenPrefix?: string;
+};
 
 export async function savePostAction(formData: FormData) {
   await assertAdmin();
@@ -183,6 +191,71 @@ export async function deleteAdminUserAction(formData: FormData) {
     scope: "admin-delete",
     message: "Admin record deleted.",
   });
+}
+
+export async function createMcpTokenAction(
+  _previousState: CreateMcpTokenActionState,
+  formData: FormData
+): Promise<CreateMcpTokenActionState> {
+  try {
+    const session = await getAdminSession();
+
+    if (!session) {
+      return {
+        kind: "error",
+        message: "Unauthorized",
+      };
+    }
+
+    const label = requireString(formData, "label");
+    const created = await createMcpToken(label, session.user?.login ?? "unknown");
+
+    revalidatePath("/admin");
+    revalidatePath("/admin/tokens");
+
+    return {
+      kind: "success",
+      message: "MCP token created. Copy it now; the plaintext value will not be shown again.",
+      token: created.token,
+      tokenPrefix: created.record.tokenPrefix,
+    };
+  } catch (error) {
+    return {
+      kind: "error",
+      message: error instanceof Error ? error.message : "Failed to create MCP token.",
+    };
+  }
+}
+
+export async function revokeMcpTokenAction(formData: FormData) {
+  await assertAdmin();
+
+  const id = Number(formData.get("id"));
+
+  if (!Number.isFinite(id)) {
+    redirectWithFeedback("/admin/tokens", {
+      kind: "error",
+      scope: "mcp-token-revoke",
+      message: "Invalid token id.",
+    });
+  }
+
+  try {
+    await revokeMcpToken(id);
+    revalidatePath("/admin");
+    revalidatePath("/admin/tokens");
+    redirectWithFeedback("/admin/tokens", {
+      kind: "success",
+      scope: "mcp-token-revoke",
+      message: "MCP token revoked.",
+    });
+  } catch (error) {
+    redirectWithFeedback("/admin/tokens", {
+      kind: "error",
+      scope: "mcp-token-revoke",
+      message: error instanceof Error ? error.message : "Failed to revoke MCP token.",
+    });
+  }
 }
 
 export async function deleteTagAction(formData: FormData) {

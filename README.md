@@ -104,8 +104,10 @@ The server uses `stdio`, so it is intended for local-only use.
 
 ### Auth / token expectations
 
-- Local `stdio` use: no extra token is required
-- Remote or HTTP exposure: add your own token/auth layer before exposing it outside your machine
+- Local `stdio` use now requires `BLOG_MCP_TOKEN`
+- Generate the token in [app/admin/tokens/page.tsx](/Users/shenhuanjie/Documents/Projects/codex/codex-blog-website/app/admin/tokens/page.tsx)
+- The admin UI only shows the plaintext token once; the database stores a hash
+- Revoking a token in `/admin/tokens` makes existing MCP clients fail on their next tool call
 
 ### Requirements
 
@@ -120,6 +122,12 @@ Use this command in your MCP client:
 npm run mcp:blog
 ```
 
+And pass:
+
+```bash
+BLOG_MCP_TOKEN=your-token-from-admin
+```
+
 Claude Desktop example config:
 
 File: [mcp/claude-desktop.example.json](/Users/shenhuanjie/Documents/Projects/codex/codex-blog-website/mcp/claude-desktop.example.json)
@@ -130,7 +138,10 @@ File: [mcp/claude-desktop.example.json](/Users/shenhuanjie/Documents/Projects/co
     "neonstack-blog-local": {
       "command": "npm",
       "args": ["run", "mcp:blog"],
-      "cwd": "/Users/shenhuanjie/Documents/Projects/codex/codex-blog-website"
+      "cwd": "/Users/shenhuanjie/Documents/Projects/codex/codex-blog-website",
+      "env": {
+        "BLOG_MCP_TOKEN": "paste-token-generated-in-admin-here"
+      }
     }
   }
 }

@@ -1,5 +1,6 @@
 import { Container } from "@/components/layout/container";
 import { Section } from "@/components/layout/section";
+import { GithubSignInButton } from "@/components/admin/github-sign-in-button";
 import { CyberButton } from "@/components/ui/cyber-button";
 import { CyberCard } from "@/components/ui/cyber-card";
 import { hasSeededAdminAccess } from "@/lib/auth/admins";
@@ -61,9 +62,7 @@ export default async function AdminLayout({
               这个后台只对 GitHub 白名单管理员开放。登录后，我们会按 `ADMIN_GITHUB_LOGINS`
               校验访问权限。
             </p>
-            <CyberButton href="/api/auth/signin" variant="glitch">
-              使用 GitHub 登录
-            </CyberButton>
+            <GithubSignInButton />
           </CyberCard>
         </Container>
       </Section>

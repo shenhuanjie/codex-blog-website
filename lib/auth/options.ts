@@ -5,18 +5,15 @@ import { isAdminLogin } from "@/lib/auth/admins";
 import { isAuthConfigured } from "@/lib/env";
 
 export const authOptions: NextAuthOptions = {
-  secret: process.env.AUTH_SECRET,
+  secret: process.env.AUTH_SECRET?.trim(),
   providers: isAuthConfigured()
     ? [
         GitHubProvider({
-          clientId: process.env.AUTH_GITHUB_ID ?? "",
-          clientSecret: process.env.AUTH_GITHUB_SECRET ?? "",
+          clientId: process.env.AUTH_GITHUB_ID?.trim() ?? "",
+          clientSecret: process.env.AUTH_GITHUB_SECRET?.trim() ?? "",
         }),
       ]
     : [],
-  pages: {
-    signIn: "/api/auth/signin",
-  },
   session: {
     strategy: "jwt",
   },

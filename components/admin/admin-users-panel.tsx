@@ -38,7 +38,7 @@ export function AdminUsersPanel({ admins }: AdminUsersPanelProps) {
               required
             />
           </div>
-          <CyberButton type="submit" variant="glitch" className="sm:min-w-32">
+          <CyberButton type="submit" className="sm:min-w-32">
             添加
           </CyberButton>
         </form>

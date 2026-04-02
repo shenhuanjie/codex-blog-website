@@ -51,7 +51,7 @@ export function TagsPanel({ tags }: TagsPanelProps) {
                 </option>
               ))}
             </select>
-            <CyberButton type="submit" variant="glitch">
+            <CyberButton type="submit">
               合并
             </CyberButton>
           </form>

@@ -57,7 +57,7 @@ export default async function AdminPage() {
           快速操作
         </p>
         <div className="flex flex-wrap gap-3">
-          <CyberButton href="/admin/posts/new" variant="glitch">
+          <CyberButton href="/admin/posts/new">
             新建文章
           </CyberButton>
           <CyberButton href="/admin/posts" variant="outline">

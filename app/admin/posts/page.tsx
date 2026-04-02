@@ -48,7 +48,7 @@ export default async function AdminPostsPage({
             共 {filtered.length} 篇文章，支持状态与关键词筛选。
           </p>
         </div>
-        <CyberButton href="/admin/posts/new" variant="glitch">
+        <CyberButton href="/admin/posts/new">
           新建文章
         </CyberButton>
       </div>

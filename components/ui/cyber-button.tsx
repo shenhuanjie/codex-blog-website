@@ -19,9 +19,9 @@ type CyberButtonProps = {
 
 const variants: Record<CyberButtonVariant, string> = {
   default:
-    "border-2 border-accent text-accent hover:bg-accent hover:text-background hover:shadow-[var(--box-shadow-neon)]",
+    "border-2 border-accent bg-transparent text-accent hover:bg-accent/10 hover:text-accent hover:shadow-[var(--box-shadow-neon-sm)]",
   secondary:
-    "border-2 border-accentSecondary text-accentSecondary hover:bg-accentSecondary hover:text-background hover:shadow-[var(--box-shadow-neon-secondary)]",
+    "border-2 border-accentSecondary bg-transparent text-accentSecondary hover:bg-accentSecondary/10 hover:text-accentSecondary hover:shadow-[var(--box-shadow-neon-secondary)]",
   outline:
     "border border-border text-foreground hover:border-accent hover:text-accent hover:shadow-[var(--box-shadow-neon-sm)]",
   ghost: "border border-transparent text-foreground hover:bg-accent/10 hover:text-accent",
@@ -30,7 +30,7 @@ const variants: Record<CyberButtonVariant, string> = {
 };
 
 const baseClassName =
-  "cyber-chamfer-sm inline-flex min-h-11 items-center justify-center gap-2 px-4 py-2 text-sm font-semibold uppercase tracking-[0.2em] transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background";
+  "cyber-chamfer-sm inline-flex min-h-11 items-center justify-center gap-2 px-4 py-2 font-sans text-sm leading-none font-semibold tracking-[0.04em] whitespace-nowrap transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:tracking-[0.08em]";
 
 export function CyberButton({
   children,
@@ -45,8 +45,7 @@ export function CyberButton({
     return (
       <Link
         href={href}
-        className={cx(classes, variant === "glitch" && "cyber-glitch")}
-        data-text={typeof children === "string" ? children : undefined}
+        className={classes}
       >
         {children}
       </Link>
@@ -56,8 +55,7 @@ export function CyberButton({
   return (
     <button
       type="button"
-      className={cx(classes, variant === "glitch" && "cyber-glitch")}
-      data-text={typeof children === "string" ? children : undefined}
+      className={classes}
       {...buttonProps}
     >
       {children}

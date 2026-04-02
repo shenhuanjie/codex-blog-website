@@ -99,7 +99,7 @@ export function PostEditorForm({ post }: PostEditorFormProps) {
         </div>
 
         <div className="flex flex-wrap gap-3">
-          <CyberButton type="submit" variant="glitch" className="min-w-36">
+          <CyberButton type="submit" className="min-w-36">
             {post ? "更新文章" : "创建文章"}
           </CyberButton>
           <CyberButton

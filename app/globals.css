@@ -2,9 +2,35 @@
 
 :root {
   color-scheme: dark;
-  --font-heading: "Orbitron", "Rajdhani", "Share Tech Mono", "JetBrains Mono", monospace;
-  --font-body: "JetBrains Mono", "IBM Plex Mono", "Fira Code", "Consolas", monospace;
-  --font-label: "Share Tech Mono", "Rajdhani", "IBM Plex Mono", monospace;
+  --font-heading:
+    "Orbitron",
+    "Rajdhani",
+    "Share Tech Mono",
+    "PingFang SC",
+    "Hiragino Sans GB",
+    "Noto Sans SC",
+    "Microsoft YaHei",
+    "JetBrains Mono",
+    monospace;
+  --font-body:
+    "JetBrains Mono",
+    "IBM Plex Mono",
+    "Fira Code",
+    "PingFang SC",
+    "Hiragino Sans GB",
+    "Noto Sans SC",
+    "Microsoft YaHei",
+    "Consolas",
+    monospace;
+  --font-label:
+    "Share Tech Mono",
+    "Rajdhani",
+    "PingFang SC",
+    "Hiragino Sans GB",
+    "Noto Sans SC",
+    "Microsoft YaHei",
+    "IBM Plex Mono",
+    monospace;
   --background: #0a0a0f;
   --foreground: #e0e0e0;
   --card: #12121a;

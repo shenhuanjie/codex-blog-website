@@ -40,6 +40,11 @@ export type ManagedPostPreview = {
   slugAlternatives: string[];
   summary: string;
   tags: string[];
+  tagRecommendations: Array<{
+    tag: string;
+    score: number;
+    matchedIn: Array<"title" | "summary" | "content">;
+  }>;
   cover?: string;
   readingTime: string;
   wordCount: number;
@@ -52,6 +57,7 @@ export type ManagedPostPreview = {
     status: PostRecord["status"];
     updatedAt: string;
     relevanceScore: number;
+    matchReasons: string[];
   }>;
   recommendation: "create" | "update-existing" | "review";
   editorNote: string;
@@ -97,44 +103,58 @@ function normalizeTagList(tags: string[] | undefined): string[] {
   return [...new Set((tags ?? []).map((tag) => tag.trim()).filter(Boolean))];
 }
 
-function scoreDuplicateCandidate(inputTitle: string, inputSlug: string, post: PostRecord, queryTerms: string[]): number {
+function scoreDuplicateCandidate(inputTitle: string, inputSlug: string, post: PostRecord, queryTerms: string[]): {
+  score: number;
+  reasons: string[];
+} {
   const title = post.title.toLowerCase();
   const slug = post.slug.toLowerCase();
   const summary = post.summary.toLowerCase();
   const normalizedTitle = inputTitle.toLowerCase();
   let score = 0;
+  const reasons: string[] = [];
 
   if (slug === inputSlug) {
     score += 100;
+    reasons.push("Exact slug match");
   }
 
   if (title === normalizedTitle) {
     score += 80;
+    reasons.push("Exact title match");
   }
 
   if (title.includes(normalizedTitle) || normalizedTitle.includes(title)) {
     score += 40;
+    reasons.push("Title overlap");
   }
 
   if (summary.includes(normalizedTitle)) {
     score += 20;
+    reasons.push("Summary mentions the proposed title");
   }
 
   for (const term of queryTerms) {
     if (title.includes(term)) {
       score += 12;
+      reasons.push(`Shared title term: ${term}`);
     }
 
     if (slug.includes(term)) {
       score += 8;
+      reasons.push(`Shared slug term: ${term}`);
     }
 
     if (summary.includes(term)) {
       score += 4;
+      reasons.push(`Shared summary term: ${term}`);
     }
   }
 
-  return score;
+  return {
+    score,
+    reasons: [...new Set(reasons)],
+  };
 }
 
 function buildSlugAlternatives(baseSlug: string): string[] {
@@ -143,6 +163,32 @@ function buildSlugAlternatives(baseSlug: string): string[] {
 
 function countMatches(input: string, pattern: RegExp): number {
   return input.match(pattern)?.length ?? 0;
+}
+
+function scoreTagRecommendation(tag: string, title: string, summary: string, content: string): {
+  score: number;
+  matchedIn: Array<"title" | "summary" | "content">;
+} {
+  const normalizedTag = tag.toLowerCase();
+  const matchedIn: Array<"title" | "summary" | "content"> = [];
+  let score = 0;
+
+  if (title.includes(normalizedTag)) {
+    matchedIn.push("title");
+    score += 10;
+  }
+
+  if (summary.includes(normalizedTag)) {
+    matchedIn.push("summary");
+    score += 6;
+  }
+
+  if (content.includes(normalizedTag)) {
+    matchedIn.push("content");
+    score += 3;
+  }
+
+  return { score, matchedIn };
 }
 
 async function requirePost(reference: { id?: number; slug?: string }): Promise<PostRecord> {
@@ -299,10 +345,18 @@ export async function previewManagedPost(rawInput: PreviewManagedPostInput): Pro
   const externalLinkCount = countMatches(input.content, /\[[^\]]+\]\(https?:\/\/[^)]+\)/g);
   const imageCount = countMatches(input.content, /!\[[^\]]*\]\([^)]+\)/g);
   const existingTags = isDatabaseConfigured() ? await getAllTags() : [];
-  const normalizedCorpus = `${input.title}\n${summary}\n${input.content}`.toLowerCase();
-  const matchingTagSuggestions = existingTags.filter((tag) =>
-    normalizedCorpus.includes(tag.toLowerCase())
-  );
+  const normalizedTitle = input.title.toLowerCase();
+  const normalizedSummary = summary.toLowerCase();
+  const normalizedContent = input.content.toLowerCase();
+  const tagRecommendations = existingTags
+    .map((tag) => ({
+      tag,
+      ...scoreTagRecommendation(tag, normalizedTitle, normalizedSummary, normalizedContent),
+    }))
+    .filter((item) => item.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 8);
+  const matchingTagSuggestions = tagRecommendations.map((item) => item.tag);
   const mergedTags = [...new Set([...explicitTags, ...matchingTagSuggestions])];
   const queryTerms = [...new Set(
     input.title
@@ -315,18 +369,19 @@ export async function previewManagedPost(rawInput: PreviewManagedPostInput): Pro
     ? (await listManagedPosts({ status: "all", limit: 50 }))
         .map((post) => ({
           post,
-          relevanceScore: scoreDuplicateCandidate(input.title, slug, post, queryTerms),
+          scored: scoreDuplicateCandidate(input.title, slug, post, queryTerms),
         }))
-        .filter(({ relevanceScore }) => relevanceScore > 0)
-        .sort((a, b) => b.relevanceScore - a.relevanceScore)
+        .filter(({ scored }) => scored.score > 0)
+        .sort((a, b) => b.scored.score - a.scored.score)
         .slice(0, 5)
-        .map(({ post, relevanceScore }) => ({
+        .map(({ post, scored }) => ({
           id: post.id,
           slug: post.slug,
           title: post.title,
           status: post.status,
           updatedAt: post.updatedAt,
-          relevanceScore,
+          relevanceScore: scored.score,
+          matchReasons: scored.reasons,
         }))
     : [];
 
@@ -388,6 +443,7 @@ export async function previewManagedPost(rawInput: PreviewManagedPostInput): Pro
     slugAlternatives,
     summary,
     tags: mergedTags,
+    tagRecommendations,
     cover: input.cover,
     readingTime: reading.text,
     wordCount: reading.words,

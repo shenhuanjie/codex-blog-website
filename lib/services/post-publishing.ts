@@ -37,6 +37,7 @@ export type PreviewManagedPostInput = Omit<CreateManagedPostInput, "status">;
 export type ManagedPostPreview = {
   title: string;
   slug: string;
+  slugAlternatives: string[];
   summary: string;
   tags: string[];
   cover?: string;
@@ -53,6 +54,15 @@ export type ManagedPostPreview = {
     relevanceScore: number;
   }>;
   recommendation: "create" | "update-existing" | "review";
+  editorNote: string;
+  qualityChecks: {
+    hasTitleHeading: boolean;
+    headingCount: number;
+    codeBlockCount: number;
+    bulletListCount: number;
+    externalLinkCount: number;
+    imageCount: number;
+  };
   warnings: string[];
 };
 
@@ -125,6 +135,14 @@ function scoreDuplicateCandidate(inputTitle: string, inputSlug: string, post: Po
   }
 
   return score;
+}
+
+function buildSlugAlternatives(baseSlug: string): string[] {
+  return Array.from({ length: 3 }, (_, index) => `${baseSlug}-${index + 2}`);
+}
+
+function countMatches(input: string, pattern: RegExp): number {
+  return input.match(pattern)?.length ?? 0;
 }
 
 async function requirePost(reference: { id?: number; slug?: string }): Promise<PostRecord> {
@@ -274,6 +292,12 @@ export async function previewManagedPost(rawInput: PreviewManagedPostInput): Pro
   const explicitTags = normalizeTagList(input.tags);
   const reading = readingTime(input.content);
   const warnings: string[] = [];
+  const headingCount = countMatches(input.content, /^#{1,6}\s+/gm);
+  const hasTitleHeading = /^#\s+/m.test(input.content);
+  const codeBlockCount = countMatches(input.content, /```/g) / 2;
+  const bulletListCount = countMatches(input.content, /^\s*[-*+]\s+/gm);
+  const externalLinkCount = countMatches(input.content, /\[[^\]]+\]\(https?:\/\/[^)]+\)/g);
+  const imageCount = countMatches(input.content, /!\[[^\]]*\]\([^)]+\)/g);
   const existingTags = isDatabaseConfigured() ? await getAllTags() : [];
   const normalizedCorpus = `${input.title}\n${summary}\n${input.content}`.toLowerCase();
   const matchingTagSuggestions = existingTags.filter((tag) =>
@@ -331,6 +355,18 @@ export async function previewManagedPost(rawInput: PreviewManagedPostInput): Pro
     warnings.push("No tags were provided or inferred.");
   }
 
+  if (!hasTitleHeading) {
+    warnings.push("Markdown body does not start with an H1 heading.");
+  }
+
+  if (headingCount < 3) {
+    warnings.push("Article structure is light. Consider adding more section headings.");
+  }
+
+  if (codeBlockCount === 0) {
+    warnings.push("No code blocks detected. This may be fine, but technical posts often benefit from at least one concrete example.");
+  }
+
   const topDuplicate = duplicateCandidates[0];
   const recommendation: ManagedPostPreview["recommendation"] =
     slugExists || (topDuplicate?.relevanceScore ?? 0) >= 80
@@ -338,10 +374,18 @@ export async function previewManagedPost(rawInput: PreviewManagedPostInput): Pro
       : duplicateCandidates.length > 0
         ? "review"
         : "create";
+  const editorNote =
+    recommendation === "update-existing"
+      ? "A highly similar article already exists. Prefer updating the existing post unless this is intentionally a new angle."
+      : recommendation === "review"
+        ? "There are related posts in the archive. Review the candidates before deciding whether to create a new article."
+        : "This looks like a clean new article candidate. Creating a new draft is reasonable.";
+  const slugAlternatives = slugExists ? buildSlugAlternatives(slug) : [];
 
   return {
     title: input.title,
     slug,
+    slugAlternatives,
     summary,
     tags: mergedTags,
     cover: input.cover,
@@ -351,6 +395,15 @@ export async function previewManagedPost(rawInput: PreviewManagedPostInput): Pro
     matchingTagSuggestions,
     duplicateCandidates,
     recommendation,
+    editorNote,
+    qualityChecks: {
+      hasTitleHeading,
+      headingCount,
+      codeBlockCount,
+      bulletListCount,
+      externalLinkCount,
+      imageCount,
+    },
     warnings,
   };
 }

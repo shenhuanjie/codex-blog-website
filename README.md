@@ -140,7 +140,7 @@ File: [mcp/claude-desktop.example.json](/Users/shenhuanjie/Documents/Projects/co
 
 - Use `search_posts` to avoid duplicate topics or slugs
 - Use `preview_markdown_article` to inspect slug, summary, tag suggestions, and warnings before writing anything
-- `preview_markdown_article` also returns `duplicateCandidates`, per-item `relevanceScore`, and a top-level `recommendation`
+- `preview_markdown_article` also returns `duplicateCandidates`, per-item `relevanceScore`, `slugAlternatives`, quality checks, and a top-level `recommendation`
 - Use `create_post` when you want a draft-first workflow
 - Use `save_markdown_draft` when you already have the full article body but want to keep it unpublished
 - Use `publish_markdown_article` when you already have the full article and want a one-shot publish

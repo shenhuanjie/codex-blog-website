@@ -7,10 +7,11 @@ import { createMcpTokenAction, revokeMcpTokenAction, type CreateMcpTokenActionSt
 import { CyberButton } from "@/components/ui/cyber-button";
 import { CyberCard } from "@/components/ui/cyber-card";
 import { CyberInput } from "@/components/ui/cyber-input";
-import type { McpTokenRecord } from "@/lib/admin/mcp-tokens";
+import type { McpTokenEventRecord, McpTokenRecord } from "@/lib/admin/mcp-tokens";
 
 type McpTokensPanelProps = {
   tokens: McpTokenRecord[];
+  events: McpTokenEventRecord[];
 };
 
 const initialState: CreateMcpTokenActionState = {
@@ -28,7 +29,7 @@ function formatDate(value: string | null): string {
   }).format(new Date(value));
 }
 
-export function McpTokensPanel({ tokens }: McpTokensPanelProps) {
+export function McpTokensPanel({ tokens, events }: McpTokensPanelProps) {
   const router = useRouter();
   const [state, formAction, isPending] = useActionState(createMcpTokenAction, initialState);
 
@@ -60,6 +61,14 @@ export function McpTokensPanel({ tokens }: McpTokensPanelProps) {
               required
             />
           </div>
+          <select
+            name="scope"
+            defaultValue="write"
+            className="cyber-chamfer-sm min-h-11 border border-input bg-input px-3 text-sm text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:w-40"
+          >
+            <option value="write">write</option>
+            <option value="read">read</option>
+          </select>
           <CyberButton type="submit" className="sm:min-w-36" disabled={isPending}>
             {isPending ? "生成中..." : "生成 Token"}
           </CyberButton>
@@ -75,8 +84,12 @@ export function McpTokensPanel({ tokens }: McpTokensPanelProps) {
               {state.token ? (
                 <div className="space-y-2">
                   <p className="font-mono break-all text-sm text-accent">{state.token}</p>
+                  <pre className="overflow-x-auto border border-border bg-background/60 p-3 text-xs text-mutedForeground">
+{`"env": {\n  "BLOG_MCP_TOKEN": "${state.token}"\n}`}
+                  </pre>
                   <p className="text-xs text-mutedForeground">
                     这是唯一一次展示明文 token。请立即复制到本地 MCP 客户端配置里。
+                    {state.scope === "read" ? " 只读 token 只能执行查询/预览工具。" : " write token 可以执行发布和修改操作。"}
                   </p>
                 </div>
               ) : null}
@@ -114,6 +127,9 @@ export function McpTokensPanel({ tokens }: McpTokensPanelProps) {
                   <div className="space-y-2">
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="font-mono text-sm text-accent">{token.tokenPrefix}...</p>
+                      <span className="text-xs uppercase tracking-[0.16em] text-accentSecondary">
+                        {token.scope}
+                      </span>
                       <span className={`text-xs uppercase tracking-[0.16em] ${revoked ? "text-destructive" : "text-accentSecondary"}`}>
                         {revoked ? "revoked" : "active"}
                       </span>
@@ -122,7 +138,9 @@ export function McpTokensPanel({ tokens }: McpTokensPanelProps) {
                     <div className="space-y-1 text-xs uppercase tracking-[0.14em] text-mutedForeground">
                       <p>created by @{token.createdBy}</p>
                       <p>created {formatDate(token.createdAt)}</p>
+                      <p>usage count {token.usageCount}</p>
                       <p>last used {formatDate(token.lastUsedAt)}</p>
+                      <p>last tool {token.lastUsedTool ?? "—"}</p>
                       {revoked ? <p>revoked {formatDate(token.revokedAt)}</p> : null}
                     </div>
                   </div>
@@ -138,6 +156,48 @@ export function McpTokensPanel({ tokens }: McpTokensPanelProps) {
                 </div>
               );
             })}
+          </div>
+        )}
+      </CyberCard>
+
+      <CyberCard className="space-y-4">
+        <div>
+          <p className="font-heading text-xl uppercase tracking-[0.14em] text-foreground">
+            最近调用
+          </p>
+          <p className="text-sm text-mutedForeground">
+            这里记录最近的 token 使用结果，方便确认哪些工具被执行过，以及拒绝是不是来自 scope 或撤销。
+          </p>
+        </div>
+
+        {events.length === 0 ? (
+          <p className="text-sm text-mutedForeground">
+            还没有 MCP token 使用记录。等本地客户端启动并调用工具后，这里会开始出现事件。
+          </p>
+        ) : (
+          <div className="grid gap-3">
+            {events.map((event) => (
+              <div key={event.id} className="border border-border bg-background/40 p-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className={`text-xs uppercase tracking-[0.16em] ${event.result === "allowed" ? "text-accent" : "text-destructive"}`}>
+                    {event.result}
+                  </span>
+                  <span className="text-xs uppercase tracking-[0.16em] text-accentSecondary">
+                    {event.requiredScope}
+                  </span>
+                  <span className="font-mono text-xs text-mutedForeground">
+                    {event.tokenPrefix ?? "unknown-token"}
+                  </span>
+                </div>
+                <p className="mt-2 font-mono text-sm text-foreground">{event.toolName}</p>
+                <p className="mt-1 text-xs uppercase tracking-[0.14em] text-mutedForeground">
+                  {formatDate(event.createdAt)}
+                </p>
+                {event.detail ? (
+                  <p className="mt-2 text-sm text-mutedForeground">{event.detail}</p>
+                ) : null}
+              </div>
+            ))}
           </div>
         )}
       </CyberCard>

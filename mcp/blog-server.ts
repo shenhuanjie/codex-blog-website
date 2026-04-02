@@ -111,7 +111,10 @@ async function main() {
   } = await import("../lib/services/post-publishing");
   const { assertValidMcpToken } = await import("../lib/admin/mcp-tokens");
 
-  await assertValidMcpToken(process.env.BLOG_MCP_TOKEN);
+  await assertValidMcpToken(process.env.BLOG_MCP_TOKEN, {
+    requiredScope: "read",
+    toolName: "server-startup",
+  });
 
   const server = new McpServer(
     {
@@ -125,8 +128,11 @@ async function main() {
     }
   );
 
-  async function withMcpAuth<T>(handler: () => Promise<T>) {
-    await assertValidMcpToken(process.env.BLOG_MCP_TOKEN);
+  async function withMcpAuth<T>(requiredScope: "read" | "write", toolName: string, handler: () => Promise<T>) {
+    await assertValidMcpToken(process.env.BLOG_MCP_TOKEN, {
+      requiredScope,
+      toolName,
+    });
     return handler();
   }
 
@@ -141,7 +147,7 @@ async function main() {
     },
     async ({ status, limit }) => {
       try {
-        const posts = await withMcpAuth(() => listManagedPosts({ status, limit }));
+        const posts = await withMcpAuth("read", "list_posts", () => listManagedPosts({ status, limit }));
         return formatResult("Posts loaded.", { posts });
       } catch (error) {
         return formatError(error);
@@ -157,7 +163,7 @@ async function main() {
     },
     async ({ query, status, limit }) => {
       try {
-        const posts = await withMcpAuth(() => listManagedPosts({ query, status, limit }));
+        const posts = await withMcpAuth("read", "search_posts", () => listManagedPosts({ query, status, limit }));
         return formatResult("Matching posts loaded.", { posts });
       } catch (error) {
         return formatError(error);
@@ -177,7 +183,7 @@ async function main() {
           throw new Error("Either id or slug is required.");
         }
 
-        const post = await withMcpAuth(() => getManagedPost({ id, slug }));
+        const post = await withMcpAuth("read", "get_post", () => getManagedPost({ id, slug }));
         return formatResult("Post loaded.", { post });
       } catch (error) {
         return formatError(error);
@@ -193,7 +199,7 @@ async function main() {
     },
     async (input) => {
       try {
-        const post = await withMcpAuth(() => createManagedPost(input));
+        const post = await withMcpAuth("write", "create_post", () => createManagedPost(input));
         return formatResult("Post created.", { post });
       } catch (error) {
         return formatError(error);
@@ -213,7 +219,7 @@ async function main() {
           throw new Error("Either id or slug is required.");
         }
 
-        const post = await withMcpAuth(() => updateManagedPost(input));
+        const post = await withMcpAuth("write", "update_post", () => updateManagedPost(input));
         return formatResult("Post updated.", { post });
       } catch (error) {
         return formatError(error);
@@ -233,7 +239,7 @@ async function main() {
           throw new Error("Either id or slug is required.");
         }
 
-        const post = await withMcpAuth(() => publishManagedPost({ id, slug }));
+        const post = await withMcpAuth("write", "publish_post", () => publishManagedPost({ id, slug }));
         return formatResult("Post published.", { post });
       } catch (error) {
         return formatError(error);
@@ -253,7 +259,7 @@ async function main() {
           throw new Error("Either id or slug is required.");
         }
 
-        const post = await withMcpAuth(() => saveDraftManagedPost({ id, slug }));
+        const post = await withMcpAuth("write", "save_draft", () => saveDraftManagedPost({ id, slug }));
         return formatResult("Post saved as draft.", { post });
       } catch (error) {
         return formatError(error);
@@ -273,7 +279,7 @@ async function main() {
           throw new Error("Either id or slug is required.");
         }
 
-        const post = await withMcpAuth(() => saveDraftManagedPost({ id, slug }));
+        const post = await withMcpAuth("write", "unpublish_post", () => saveDraftManagedPost({ id, slug }));
         return formatResult("Post unpublished and moved back to draft.", { post });
       } catch (error) {
         return formatError(error);
@@ -293,7 +299,7 @@ async function main() {
           throw new Error("Either id or slug is required.");
         }
 
-        const deletedPost = await withMcpAuth(() => deleteManagedPost({ id, slug }));
+        const deletedPost = await withMcpAuth("write", "delete_post", () => deleteManagedPost({ id, slug }));
         return formatResult("Post deleted.", { deletedPost });
       } catch (error) {
         return formatError(error);
@@ -309,7 +315,7 @@ async function main() {
     },
     async (input) => {
       try {
-        const preview = await withMcpAuth(() => previewManagedPost(input));
+        const preview = await withMcpAuth("read", "preview_markdown_article", () => previewManagedPost(input));
         return formatResult("Markdown article preview generated.", { preview });
       } catch (error) {
         return formatError(error);
@@ -325,7 +331,7 @@ async function main() {
     },
     async (input) => {
       try {
-        const post = await withMcpAuth(() => saveMarkdownDraft(input));
+        const post = await withMcpAuth("write", "save_markdown_draft", () => saveMarkdownDraft(input));
         return formatResult("Markdown article saved as draft.", { post });
       } catch (error) {
         return formatError(error);
@@ -341,7 +347,7 @@ async function main() {
     },
     async (input) => {
       try {
-        const post = await withMcpAuth(() => publishMarkdownArticle(input));
+        const post = await withMcpAuth("write", "publish_markdown_article", () => publishMarkdownArticle(input));
         return formatResult("Markdown article published.", { post });
       } catch (error) {
         return formatError(error);
@@ -357,7 +363,7 @@ async function main() {
     },
     async () => {
       try {
-        const tags = await withMcpAuth(() => listManagedTags());
+        const tags = await withMcpAuth("read", "list_tags", () => listManagedTags());
         return formatResult("Tags loaded.", { tags });
       } catch (error) {
         return formatError(error);

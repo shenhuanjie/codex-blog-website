@@ -1,6 +1,6 @@
 import { CyberCard } from "@/components/ui/cyber-card";
 import { CyberButton } from "@/components/ui/cyber-button";
-import { getActiveMcpTokenCount } from "@/lib/admin/mcp-tokens";
+import { getActiveMcpTokenCount, getMcpTokens } from "@/lib/admin/mcp-tokens";
 import { getDraftPostCount, getPublishedPostCount } from "@/lib/admin/posts";
 import { hasAdminWhitelistConfigured, isAuthConfigured, isGiscusConfigured, isRedisConfigured } from "@/lib/env";
 import { isDatabaseConfigured } from "@/lib/db/client";
@@ -9,13 +9,16 @@ import { siteConfig } from "@/lib/site";
 import { getTotalViewCount } from "@/lib/views";
 
 export default async function AdminPage() {
-  const [publishedCount, draftCount, siteStats, totalViews, activeMcpTokens] = await Promise.all([
+  const [publishedCount, draftCount, siteStats, totalViews, activeMcpTokens, allMcpTokens] = await Promise.all([
     getPublishedPostCount(),
     getDraftPostCount(),
     getSiteStats(),
     getTotalViewCount(),
     getActiveMcpTokenCount(),
+    getMcpTokens(),
   ]);
+  const activeReadTokens = allMcpTokens.filter((token) => !token.revokedAt && token.scope === "read").length;
+  const activeWriteTokens = allMcpTokens.filter((token) => !token.revokedAt && token.scope === "write").length;
   const hasDb = isDatabaseConfigured();
   const hasAuth = isAuthConfigured();
   const hasWhitelist = hasAdminWhitelistConfigured();
@@ -122,7 +125,7 @@ export default async function AdminPage() {
             管理本地写作客户端的发布 token，支持生成、查看最近使用时间与撤销。
           </p>
           <p className="font-mono text-sm text-accent">
-            {activeMcpTokens} active token{activeMcpTokens === 1 ? "" : "s"}
+            {activeMcpTokens} active token{activeMcpTokens === 1 ? "" : "s"} / {activeWriteTokens} write / {activeReadTokens} read
           </p>
           <CyberButton href="/admin/tokens" variant="outline" className="w-full">
             Open Tokens
@@ -195,6 +198,18 @@ export default async function AdminPage() {
             </p>
             <p className="mt-2 break-all font-mono text-sm text-accent">
               {siteConfig.url}
+            </p>
+          </div>
+
+          <div className="cyber-chamfer border border-border bg-background/40 p-4">
+            <p className="font-label text-xs uppercase tracking-[0.2em] text-mutedForeground">
+              MCP Auth
+            </p>
+            <p className="mt-2 font-heading text-lg text-foreground">
+              {activeWriteTokens > 0 ? "Write Tokens Ready" : activeMcpTokens > 0 ? "Read-only Tokens Only" : "No Active Tokens"}
+            </p>
+            <p className="mt-2 text-xs text-mutedForeground">
+              {activeWriteTokens} write / {activeReadTokens} read token(s) available for local MCP clients.
             </p>
           </div>
         </div>

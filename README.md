@@ -108,6 +108,12 @@ The server uses `stdio`, so it is intended for local-only use.
 - Generate the token in [app/admin/tokens/page.tsx](/Users/shenhuanjie/Documents/Projects/codex/codex-blog-website/app/admin/tokens/page.tsx)
 - The admin UI only shows the plaintext token once; the database stores a hash
 - Revoking a token in `/admin/tokens` makes existing MCP clients fail on their next tool call
+- Tokens now support `read` and `write` scopes
+- The admin UI also shows recent MCP token events so you can see allowed/denied calls and the last tool each token touched
+- Tokens now support scopes:
+  - `read`: list/search/get/preview style tools only
+  - `write`: includes create/update/publish/delete and also satisfies all read calls
+- The runtime now records `usageCount`, `lastUsedAt`, and `lastUsedTool` for each token so the admin UI can show real usage
 
 ### Requirements
 

@@ -57,14 +57,31 @@ export const mcpTokens = pgTable(
   {
     id: serial("id").primaryKey(),
     label: varchar("label", { length: 120 }).notNull(),
+    scope: varchar("scope", { length: 16 }).notNull().default("write"),
     tokenPrefix: varchar("token_prefix", { length: 24 }).notNull(),
     tokenHash: varchar("token_hash", { length: 64 }).notNull(),
     createdBy: varchar("created_by", { length: 120 }).notNull(),
+    usageCount: integer("usage_count").notNull().default(0),
     lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
+    lastUsedTool: varchar("last_used_tool", { length: 120 }),
     revokedAt: timestamp("revoked_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
     uniqueIndex("mcp_tokens_token_hash_unique").on(table.tokenHash),
   ]
+);
+
+export const mcpTokenEvents = pgTable(
+  "mcp_token_events",
+  {
+    id: serial("id").primaryKey(),
+    tokenId: integer("token_id").references(() => mcpTokens.id, { onDelete: "set null" }),
+    tokenPrefix: varchar("token_prefix", { length: 24 }),
+    toolName: varchar("tool_name", { length: 120 }).notNull(),
+    requiredScope: varchar("required_scope", { length: 16 }).notNull(),
+    result: varchar("result", { length: 16 }).notNull(),
+    detail: text("detail"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  }
 );

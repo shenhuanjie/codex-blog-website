@@ -48,6 +48,7 @@ export type CreateMcpTokenActionState = {
   message?: string;
   token?: string;
   tokenPrefix?: string;
+  scope?: "read" | "write";
 };
 
 export async function savePostAction(formData: FormData) {
@@ -208,7 +209,8 @@ export async function createMcpTokenAction(
     }
 
     const label = requireString(formData, "label");
-    const created = await createMcpToken(label, session.user?.login ?? "unknown");
+    const scope = requireString(formData, "scope") as "read" | "write";
+    const created = await createMcpToken(label, scope, session.user?.login ?? "unknown");
 
     revalidatePath("/admin");
     revalidatePath("/admin/tokens");
@@ -218,6 +220,7 @@ export async function createMcpTokenAction(
       message: "MCP token created. Copy it now; the plaintext value will not be shown again.",
       token: created.token,
       tokenPrefix: created.record.tokenPrefix,
+      scope: created.record.scope,
     };
   } catch (error) {
     return {

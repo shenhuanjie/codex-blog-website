@@ -40,11 +40,17 @@ export type ManagedPostPreview = {
   slugAlternatives: string[];
   summary: string;
   tags: string[];
+  selectedTags: string[];
+  suggestedTags: string[];
   tagRecommendations: Array<{
     tag: string;
     score: number;
-    matchedIn: Array<"title" | "summary" | "content">;
+    priority: "high" | "medium" | "low";
+    matchedIn: Array<"title" | "summary" | "headings" | "content" | "code">;
+    reasons: string[];
   }>;
+  tagConfidence: "strong" | "mixed" | "weak";
+  tagRecommendationNotes: string[];
   cover?: string;
   readingTime: string;
   wordCount: number;
@@ -57,8 +63,22 @@ export type ManagedPostPreview = {
     status: PostRecord["status"];
     updatedAt: string;
     relevanceScore: number;
+    similarityBand: "likely_same_article" | "strong_overlap" | "related_topic";
+    scoreBreakdown: {
+      slug: number;
+      title: number;
+      summary: number;
+      tags: number;
+      body: number;
+      heading: number;
+    };
+    matchedTags: string[];
+    matchedTitleTerms: string[];
     matchReasons: string[];
   }>;
+  topDuplicateScore: number | null;
+  topDuplicateBand: "likely_same_article" | "strong_overlap" | "related_topic" | null;
+  shouldUpdateExisting: boolean;
   recommendation: "create" | "update-existing" | "review";
   editorNote: string;
   qualityChecks: {
@@ -103,60 +123,6 @@ function normalizeTagList(tags: string[] | undefined): string[] {
   return [...new Set((tags ?? []).map((tag) => tag.trim()).filter(Boolean))];
 }
 
-function scoreDuplicateCandidate(inputTitle: string, inputSlug: string, post: PostRecord, queryTerms: string[]): {
-  score: number;
-  reasons: string[];
-} {
-  const title = post.title.toLowerCase();
-  const slug = post.slug.toLowerCase();
-  const summary = post.summary.toLowerCase();
-  const normalizedTitle = inputTitle.toLowerCase();
-  let score = 0;
-  const reasons: string[] = [];
-
-  if (slug === inputSlug) {
-    score += 100;
-    reasons.push("Exact slug match");
-  }
-
-  if (title === normalizedTitle) {
-    score += 80;
-    reasons.push("Exact title match");
-  }
-
-  if (title.includes(normalizedTitle) || normalizedTitle.includes(title)) {
-    score += 40;
-    reasons.push("Title overlap");
-  }
-
-  if (summary.includes(normalizedTitle)) {
-    score += 20;
-    reasons.push("Summary mentions the proposed title");
-  }
-
-  for (const term of queryTerms) {
-    if (title.includes(term)) {
-      score += 12;
-      reasons.push(`Shared title term: ${term}`);
-    }
-
-    if (slug.includes(term)) {
-      score += 8;
-      reasons.push(`Shared slug term: ${term}`);
-    }
-
-    if (summary.includes(term)) {
-      score += 4;
-      reasons.push(`Shared summary term: ${term}`);
-    }
-  }
-
-  return {
-    score,
-    reasons: [...new Set(reasons)],
-  };
-}
-
 function buildSlugAlternatives(baseSlug: string): string[] {
   return Array.from({ length: 3 }, (_, index) => `${baseSlug}-${index + 2}`);
 }
@@ -165,30 +131,376 @@ function countMatches(input: string, pattern: RegExp): number {
   return input.match(pattern)?.length ?? 0;
 }
 
-function scoreTagRecommendation(tag: string, title: string, summary: string, content: string): {
+function normalizeMarkdownText(input: string): string {
+  return input
+    .replace(/```[\s\S]*?```/g, " ")
+    .replace(/`([^`]+)`/g, " $1 ")
+    .replace(/!\[([^\]]*)\]\([^)]+\)/g, " $1 ")
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, " $1 ")
+    .replace(/^#{1,6}\s+/gm, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/[>*_~[\]()`|]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+
+function extractCodeText(input: string): string {
+  return (input.match(/```[\s\S]*?```/g) ?? [])
+    .join(" ")
+    .replace(/```[\w-]*\n?/g, " ")
+    .replace(/```/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+
+function extractHeadingText(input: string): string {
+  return (input.match(/^#{1,6}\s+.+$/gm) ?? [])
+    .map((line) => line.replace(/^#{1,6}\s+/, "").trim())
+    .join(" ")
+    .toLowerCase();
+}
+
+function extractProseText(input: string): string {
+  return normalizeMarkdownText(
+    input
+      .replace(/```[\s\S]*?```/g, " ")
+      .replace(/^#{1,6}\s+.+$/gm, " ")
+  );
+}
+
+function buildBodyExcerpt(input: string): string {
+  return extractProseText(input).slice(0, 1200);
+}
+
+function tokenizeForSimilarity(input: string): string[] {
+  const normalized = normalizeMarkdownText(input);
+  const latinTokens = normalized.match(/[a-z0-9]{2,}/g) ?? [];
+  const cjkRuns = normalized.match(/[\u3400-\u9fff]+/g) ?? [];
+  const cjkNgrams = cjkRuns.flatMap((run) => {
+    if (run.length === 1) {
+      return [run];
+    }
+
+    const grams: string[] = [];
+    for (let index = 0; index < run.length - 1; index += 1) {
+      grams.push(run.slice(index, index + 2));
+    }
+    return grams;
+  });
+
+  return [...new Set([...latinTokens, ...cjkNgrams])];
+}
+
+function diceCoefficient(left: string[], right: string[]): number {
+  if (left.length === 0 || right.length === 0) {
+    return 0;
+  }
+
+  const leftSet = new Set(left);
+  const rightSet = new Set(right);
+  let intersection = 0;
+
+  for (const token of leftSet) {
+    if (rightSet.has(token)) {
+      intersection += 1;
+    }
+  }
+
+  return (2 * intersection) / (leftSet.size + rightSet.size);
+}
+
+function jaccardSimilarity(left: string[], right: string[]): number {
+  if (left.length === 0 && right.length === 0) {
+    return 0;
+  }
+
+  const leftSet = new Set(left);
+  const rightSet = new Set(right);
+  let intersection = 0;
+
+  for (const token of leftSet) {
+    if (rightSet.has(token)) {
+      intersection += 1;
+    }
+  }
+
+  const union = new Set([...leftSet, ...rightSet]).size;
+  return union === 0 ? 0 : intersection / union;
+}
+
+function countTermOccurrences(haystack: string, needle: string): number {
+  if (!haystack || !needle) {
+    return 0;
+  }
+
+  return haystack.split(needle).length - 1;
+}
+
+type SimilarityProfile = {
+  title: string;
+  slug: string;
+  summary: string;
+  tags: string[];
+  titleTokens: string[];
+  summaryTokens: string[];
+  headingTokens: string[];
+  bodyTokens: string[];
+  leadingHeading: string;
+};
+
+function buildSimilarityProfile(input: {
+  title: string;
+  slug: string;
+  summary: string;
+  tags?: string[];
+  content: string;
+}): SimilarityProfile {
+  const headingLines = (input.content.match(/^#{1,6}\s+.+$/gm) ?? [])
+    .map((line) => line.replace(/^#{1,6}\s+/, "").trim())
+    .filter(Boolean);
+  const headingText = headingLines.join(" ");
+  const bodyExcerpt = buildBodyExcerpt(input.content);
+
+  return {
+    title: normalizeMarkdownText(input.title),
+    slug: slugifyTag(input.slug),
+    summary: normalizeMarkdownText(input.summary),
+    tags: normalizeTagList(input.tags).map((tag) => slugifyTag(tag)),
+    titleTokens: tokenizeForSimilarity(input.title),
+    summaryTokens: tokenizeForSimilarity(input.summary),
+    headingTokens: tokenizeForSimilarity(headingText),
+    bodyTokens: tokenizeForSimilarity(bodyExcerpt),
+    leadingHeading: normalizeMarkdownText(headingLines[0] ?? ""),
+  };
+}
+
+function scoreDuplicateCandidate(input: SimilarityProfile, post: PostRecord): {
   score: number;
-  matchedIn: Array<"title" | "summary" | "content">;
+  band: "likely_same_article" | "strong_overlap" | "related_topic";
+  reasons: string[];
+  scoreBreakdown: {
+    slug: number;
+    title: number;
+    summary: number;
+    tags: number;
+    body: number;
+    heading: number;
+  };
+  matchedTags: string[];
+  matchedTitleTerms: string[];
 } {
-  const normalizedTag = tag.toLowerCase();
-  const matchedIn: Array<"title" | "summary" | "content"> = [];
+  const postProfile = buildSimilarityProfile({
+    title: post.title,
+    slug: post.slug,
+    summary: post.summary,
+    tags: post.tags,
+    content: post.content,
+  });
+
+  const matchedTags = input.tags.filter((tag) => postProfile.tags.includes(tag));
+  const matchedTitleTerms = input.titleTokens.filter((token) => postProfile.titleTokens.includes(token)).slice(0, 6);
+  const scoreBreakdown = {
+    slug: postProfile.slug === input.slug ? 100 : 0,
+    title: Math.round(diceCoefficient(input.titleTokens, postProfile.titleTokens) * 35),
+    summary: Math.round(diceCoefficient(input.summaryTokens, postProfile.summaryTokens) * 20),
+    tags: Math.round(jaccardSimilarity(input.tags, postProfile.tags) * 20),
+    body: Math.round(diceCoefficient(input.bodyTokens, postProfile.bodyTokens) * 20),
+    heading:
+      input.leadingHeading && postProfile.leadingHeading && input.leadingHeading === postProfile.leadingHeading
+        ? 10
+        : Math.round(diceCoefficient(input.headingTokens, postProfile.headingTokens) * 10),
+  };
+
+  const score = Object.values(scoreBreakdown).reduce((total, value) => total + value, 0);
+  const band =
+    score >= 85
+      ? "likely_same_article"
+      : score >= 65
+        ? "strong_overlap"
+        : "related_topic";
+  const reasons: string[] = [];
+
+  if (scoreBreakdown.slug === 100) {
+    reasons.push("Exact slug match");
+  }
+
+  if (scoreBreakdown.title >= 28) {
+    reasons.push("Title similarity is very high");
+  } else if (scoreBreakdown.title >= 18) {
+    reasons.push("Title terms overlap strongly");
+  }
+
+  if (scoreBreakdown.summary >= 12) {
+    reasons.push("Summary framing overlaps with an existing post");
+  }
+
+  if (matchedTags.length > 0) {
+    reasons.push(`Shared tags: ${matchedTags.join(", ")}`);
+  }
+
+  if (scoreBreakdown.body >= 12) {
+    reasons.push("Body excerpt discusses a very similar topic");
+  }
+
+  if (scoreBreakdown.heading >= 8) {
+    reasons.push("Heading structure closely matches an existing article");
+  }
+
+  if (matchedTitleTerms.length > 0) {
+    reasons.push(`Shared title terms: ${matchedTitleTerms.join(", ")}`);
+  }
+
+  return {
+    score,
+    band,
+    reasons,
+    scoreBreakdown,
+    matchedTags,
+    matchedTitleTerms,
+  };
+}
+
+function buildTagCooccurrence(posts: PostRecord[], explicitTags: string[]): Map<string, number> {
+  const explicitSet = new Set(explicitTags.map((tag) => slugifyTag(tag)));
+  const cooccurrence = new Map<string, number>();
+
+  if (explicitSet.size === 0) {
+    return cooccurrence;
+  }
+
+  for (const post of posts) {
+    const normalizedPostTags = post.tags.map((tag) => slugifyTag(tag));
+    if (!normalizedPostTags.some((tag) => explicitSet.has(tag))) {
+      continue;
+    }
+
+    for (const tag of normalizedPostTags) {
+      if (explicitSet.has(tag)) {
+        continue;
+      }
+
+      cooccurrence.set(tag, (cooccurrence.get(tag) ?? 0) + 1);
+    }
+  }
+
+  return cooccurrence;
+}
+
+function scoreTagRecommendation(
+  tag: string,
+  context: {
+    title: string;
+    summary: string;
+    headings: string;
+    prose: string;
+    code: string;
+    titleTokens: string[];
+    summaryTokens: string[];
+    headingTokens: string[];
+    proseTokens: string[];
+  },
+  relatedTagBoost: number
+): {
+  score: number;
+  priority: "high" | "medium" | "low";
+  matchedIn: Array<"title" | "summary" | "headings" | "content" | "code">;
+  reasons: string[];
+} {
+  const normalizedTag = normalizeMarkdownText(tag);
+  const tagTokens = tokenizeForSimilarity(tag);
+  const matchedIn = new Set<"title" | "summary" | "headings" | "content" | "code">();
+  const reasons: string[] = [];
   let score = 0;
 
-  if (title.includes(normalizedTag)) {
-    matchedIn.push("title");
+  if (context.title.includes(normalizedTag)) {
+    score += 24;
+    matchedIn.add("title");
+    reasons.push(`Title directly names "${tag}"`);
+  } else {
+    const titleSimilarity = diceCoefficient(tagTokens, context.titleTokens);
+    if (titleSimilarity >= 0.5) {
+      score += 16;
+      matchedIn.add("title");
+      reasons.push(`Title terms strongly align with "${tag}"`);
+    }
+  }
+
+  if (context.summary.includes(normalizedTag)) {
+    score += 12;
+    matchedIn.add("summary");
+    reasons.push(`Summary explicitly references "${tag}"`);
+  } else {
+    const summarySimilarity = diceCoefficient(tagTokens, context.summaryTokens);
+    if (summarySimilarity >= 0.45) {
+      score += 8;
+      matchedIn.add("summary");
+      reasons.push(`Summary reinforces "${tag}"`);
+    }
+  }
+
+  if (context.headings.includes(normalizedTag)) {
     score += 10;
+    matchedIn.add("headings");
+    reasons.push(`Section headings support "${tag}"`);
+  } else {
+    const headingSimilarity = diceCoefficient(tagTokens, context.headingTokens);
+    if (headingSimilarity >= 0.45) {
+      score += 6;
+      matchedIn.add("headings");
+      reasons.push(`Heading structure suggests "${tag}"`);
+    }
   }
 
-  if (summary.includes(normalizedTag)) {
-    matchedIn.push("summary");
-    score += 6;
+  const proseHits = countTermOccurrences(context.prose, normalizedTag);
+  if (proseHits > 0) {
+    score += Math.min(proseHits * 2, 10);
+    matchedIn.add("content");
+    reasons.push(`Body prose mentions "${tag}" ${proseHits} time${proseHits > 1 ? "s" : ""}`);
+  } else {
+    const proseSimilarity = diceCoefficient(tagTokens, context.proseTokens);
+    if (proseSimilarity >= 0.45) {
+      score += 6;
+      matchedIn.add("content");
+      reasons.push(`Body discussion is closely related to "${tag}"`);
+    }
   }
 
-  if (content.includes(normalizedTag)) {
-    matchedIn.push("content");
-    score += 3;
+  const codeHits = countTermOccurrences(context.code, normalizedTag);
+  if (codeHits > 0) {
+    matchedIn.add("code");
+    if (matchedIn.size === 1) {
+      score += 1;
+      reasons.push(`"${tag}" only appears in code snippets, so confidence stays low`);
+    } else {
+      reasons.push(`Code examples also reference "${tag}"`);
+    }
   }
 
-  return { score, matchedIn };
+  if (relatedTagBoost > 0) {
+    score += Math.min(relatedTagBoost * 2, 6);
+    reasons.push(`Frequently co-occurs with the selected tags in existing posts`);
+  }
+
+  if (normalizedTag.length <= 2 && score < 18) {
+    score -= 6;
+    reasons.push(`Very short tag with weak evidence, so it was down-weighted`);
+  }
+
+  const priority =
+    score >= 28
+      ? "high"
+      : score >= 16
+        ? "medium"
+        : "low";
+
+  return {
+    score,
+    priority,
+    matchedIn: [...matchedIn],
+    reasons,
+  };
 }
 
 async function requirePost(reference: { id?: number; slug?: string }): Promise<PostRecord> {
@@ -345,33 +657,62 @@ export async function previewManagedPost(rawInput: PreviewManagedPostInput): Pro
   const externalLinkCount = countMatches(input.content, /\[[^\]]+\]\(https?:\/\/[^)]+\)/g);
   const imageCount = countMatches(input.content, /!\[[^\]]*\]\([^)]+\)/g);
   const existingTags = isDatabaseConfigured() ? await getAllTags() : [];
-  const normalizedTitle = input.title.toLowerCase();
-  const normalizedSummary = summary.toLowerCase();
-  const normalizedContent = input.content.toLowerCase();
+  const existingPosts = isDatabaseConfigured() ? await getAdminPostRecords() : [];
+  const normalizedTitle = normalizeMarkdownText(input.title);
+  const normalizedSummary = normalizeMarkdownText(summary);
+  const normalizedHeadings = extractHeadingText(input.content);
+  const normalizedProse = extractProseText(input.content);
+  const normalizedCode = extractCodeText(input.content);
+  const normalizedExplicitTags = explicitTags.map((tag) => slugifyTag(tag));
+  const tagCooccurrence = buildTagCooccurrence(existingPosts, explicitTags);
+  const titleTokens = tokenizeForSimilarity(input.title);
+  const summaryTokens = tokenizeForSimilarity(summary);
+  const headingTokens = tokenizeForSimilarity(normalizedHeadings);
+  const proseTokens = tokenizeForSimilarity(normalizedProse);
   const tagRecommendations = existingTags
-    .map((tag) => ({
-      tag,
-      ...scoreTagRecommendation(tag, normalizedTitle, normalizedSummary, normalizedContent),
-    }))
+    .filter((tag) => !normalizedExplicitTags.includes(slugifyTag(tag)))
+    .map((tag) => {
+      const normalizedTag = slugifyTag(tag);
+      return {
+        tag,
+        ...scoreTagRecommendation(
+          tag,
+          {
+            title: normalizedTitle,
+            summary: normalizedSummary,
+            headings: normalizedHeadings,
+            prose: normalizedProse,
+            code: normalizedCode,
+            titleTokens,
+            summaryTokens,
+            headingTokens,
+            proseTokens,
+          },
+          tagCooccurrence.get(normalizedTag) ?? 0
+        ),
+      };
+    })
     .filter((item) => item.score > 0)
     .sort((a, b) => b.score - a.score)
     .slice(0, 8);
-  const matchingTagSuggestions = tagRecommendations.map((item) => item.tag);
+  const matchingTagSuggestions = tagRecommendations
+    .filter((item) => item.priority !== "low" || item.score >= 12)
+    .map((item) => item.tag);
   const mergedTags = [...new Set([...explicitTags, ...matchingTagSuggestions])];
-  const queryTerms = [...new Set(
-    input.title
-      .toLowerCase()
-      .split(/[\s\-_/]+/)
-      .map((term) => term.trim())
-      .filter((term) => term.length >= 3)
-  )];
+  const inputProfile = buildSimilarityProfile({
+    title: input.title,
+    slug,
+    summary,
+    tags: mergedTags,
+    content: input.content,
+  });
   const duplicateCandidates = isDatabaseConfigured()
-    ? (await listManagedPosts({ status: "all", limit: 50 }))
+    ? existingPosts
         .map((post) => ({
           post,
-          scored: scoreDuplicateCandidate(input.title, slug, post, queryTerms),
+          scored: scoreDuplicateCandidate(inputProfile, post),
         }))
-        .filter(({ scored }) => scored.score > 0)
+        .filter(({ scored }) => scored.score >= 40)
         .sort((a, b) => b.scored.score - a.scored.score)
         .slice(0, 5)
         .map(({ post, scored }) => ({
@@ -381,6 +722,10 @@ export async function previewManagedPost(rawInput: PreviewManagedPostInput): Pro
           status: post.status,
           updatedAt: post.updatedAt,
           relevanceScore: scored.score,
+          similarityBand: scored.band,
+          scoreBreakdown: scored.scoreBreakdown,
+          matchedTags: scored.matchedTags,
+          matchedTitleTerms: scored.matchedTitleTerms,
           matchReasons: scored.reasons,
         }))
     : [];
@@ -406,8 +751,26 @@ export async function previewManagedPost(rawInput: PreviewManagedPostInput): Pro
     warnings.push("Tags were inferred from existing tag vocabulary.");
   }
 
+  const tagRecommendationNotes = tagRecommendations.length > 0
+    ? tagRecommendations.slice(0, 3).map((item) => {
+        const signal = item.reasons[0] ?? `The article has supporting signals for "${item.tag}"`;
+        return `${item.tag}: ${signal}`;
+      })
+    : ["No strong tag recommendations were found from the current vocabulary."];
+
+  const tagConfidence: ManagedPostPreview["tagConfidence"] =
+    explicitTags.length > 0 || tagRecommendations.some((item) => item.priority === "high")
+      ? "strong"
+      : tagRecommendations.some((item) => item.priority === "medium")
+        ? "mixed"
+        : "weak";
+
   if (mergedTags.length === 0) {
     warnings.push("No tags were provided or inferred.");
+  }
+
+  if (tagConfidence === "weak" && explicitTags.length === 0) {
+    warnings.push("Tag signals are weak. Consider adding one or two explicit tags before publishing.");
   }
 
   if (!hasTitleHeading) {
@@ -423,8 +786,11 @@ export async function previewManagedPost(rawInput: PreviewManagedPostInput): Pro
   }
 
   const topDuplicate = duplicateCandidates[0];
+  const topDuplicateScore = topDuplicate?.relevanceScore ?? null;
+  const topDuplicateBand = topDuplicate?.similarityBand ?? null;
+  const shouldUpdateExisting = slugExists || topDuplicateBand === "likely_same_article";
   const recommendation: ManagedPostPreview["recommendation"] =
-    slugExists || (topDuplicate?.relevanceScore ?? 0) >= 80
+    shouldUpdateExisting
       ? "update-existing"
       : duplicateCandidates.length > 0
         ? "review"
@@ -443,13 +809,20 @@ export async function previewManagedPost(rawInput: PreviewManagedPostInput): Pro
     slugAlternatives,
     summary,
     tags: mergedTags,
+    selectedTags: explicitTags,
+    suggestedTags: matchingTagSuggestions,
     tagRecommendations,
+    tagConfidence,
+    tagRecommendationNotes,
     cover: input.cover,
     readingTime: reading.text,
     wordCount: reading.words,
     slugExists,
     matchingTagSuggestions,
     duplicateCandidates,
+    topDuplicateScore,
+    topDuplicateBand,
+    shouldUpdateExisting,
     recommendation,
     editorNote,
     qualityChecks: {

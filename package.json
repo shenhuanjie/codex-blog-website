@@ -7,12 +7,14 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "mcp:blog": "tsx mcp/blog-server.ts",
     "db:generate": "drizzle-kit generate",
     "db:import": "node scripts/import-mdx-to-postgres.mjs",
     "db:seed-admins": "node scripts/seed-admin-users.mjs"
   },
   "dependencies": {
     "@giscus/react": "^3.1.0",
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "@upstash/redis": "^1.37.0",
     "drizzle-orm": "^0.45.2",
     "flexsearch": "^0.8.212",
@@ -27,6 +29,7 @@
     "rehype-highlight": "^7.0.2",
     "rehype-pretty-code": "^0.14.3",
     "remark-gfm": "^4.0.1",
+    "tsx": "^4.21.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {

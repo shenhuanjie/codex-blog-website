@@ -18,6 +18,7 @@ Cyberpunk-styled personal technical blog built with `Next.js 16`, `TypeScript`, 
 npm run dev
 npm run build
 npm run lint
+npm run mcp:blog
 npm run db:import
 npm run db:seed-admins
 ```
@@ -67,6 +68,84 @@ GitHub OAuth callback URLs:
 ```bash
 POSTGRES_URL="your-neon-url" npm run db:import
 ```
+
+## Local MCP Publishing
+
+This repo includes a local MCP server for direct post publishing from local agents or MCP-capable clients.
+
+### What it can do
+
+- `list_posts`
+- `search_posts`
+- `get_post`
+- `create_post`
+- `update_post`
+- `publish_post`
+- `save_draft`
+- `unpublish_post`
+- `delete_post`
+- `preview_markdown_article`
+- `save_markdown_draft`
+- `publish_markdown_article`
+- `list_tags`
+
+### Included MCP prompts
+
+- `draft-technical-post`
+- `publish-existing-article`
+
+### Start the server
+
+```bash
+npm run mcp:blog
+```
+
+The server uses `stdio`, so it is intended for local-only use.
+
+### Auth / token expectations
+
+- Local `stdio` use: no extra token is required
+- Remote or HTTP exposure: add your own token/auth layer before exposing it outside your machine
+
+### Requirements
+
+- `POSTGRES_URL` must be set
+- The server loads local `.env*` files via `@next/env`, so your existing app env setup can be reused
+
+### Example client config
+
+Use this command in your MCP client:
+
+```bash
+npm run mcp:blog
+```
+
+Claude Desktop example config:
+
+File: [mcp/claude-desktop.example.json](/Users/shenhuanjie/Documents/Projects/codex/codex-blog-website/mcp/claude-desktop.example.json)
+
+```json
+{
+  "mcpServers": {
+    "neonstack-blog-local": {
+      "command": "npm",
+      "args": ["run", "mcp:blog"],
+      "cwd": "/Users/shenhuanjie/Documents/Projects/codex/codex-blog-website"
+    }
+  }
+}
+```
+
+### Recommended agent flow
+
+- Use `search_posts` to avoid duplicate topics or slugs
+- Use `preview_markdown_article` to inspect slug, summary, tag suggestions, and warnings before writing anything
+- `preview_markdown_article` also returns `duplicateCandidates`, per-item `relevanceScore`, and a top-level `recommendation`
+- Use `create_post` when you want a draft-first workflow
+- Use `save_markdown_draft` when you already have the full article body but want to keep it unpublished
+- Use `publish_markdown_article` when you already have the full article and want a one-shot publish
+- Use `save_draft` and `publish_post` to switch states explicitly
+- Use `delete_post` only for cleanup or mistaken drafts
 
 ## Vercel Deployment
 

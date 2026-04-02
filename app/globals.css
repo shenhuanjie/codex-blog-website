@@ -1,0 +1,337 @@
+@import "tailwindcss";
+
+:root {
+  color-scheme: dark;
+  --font-heading: "Orbitron", "Rajdhani", "Share Tech Mono", "JetBrains Mono", monospace;
+  --font-body: "JetBrains Mono", "IBM Plex Mono", "Fira Code", "Consolas", monospace;
+  --font-label: "Share Tech Mono", "Rajdhani", "IBM Plex Mono", monospace;
+  --background: #0a0a0f;
+  --foreground: #e0e0e0;
+  --card: #12121a;
+  --muted: #1c1c2e;
+  --mutedForeground: #6b7280;
+  --accent: #00ff88;
+  --accentSecondary: #ff00ff;
+  --accentTertiary: #00d4ff;
+  --border: #2a2a3a;
+  --input: #12121a;
+  --ring: #00ff88;
+  --destructive: #ff3366;
+
+  --box-shadow-neon: 0 0 5px #00ff88, 0 0 10px #00ff8840;
+  --box-shadow-neon-sm: 0 0 3px #00ff88, 0 0 6px #00ff8830;
+  --box-shadow-neon-lg: 0 0 10px #00ff88, 0 0 20px #00ff8860, 0 0 40px #00ff8830;
+  --box-shadow-neon-secondary: 0 0 5px #ff00ff, 0 0 20px #ff00ff60;
+  --box-shadow-neon-tertiary: 0 0 5px #00d4ff, 0 0 20px #00d4ff60;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-muted: var(--muted);
+  --color-mutedForeground: var(--mutedForeground);
+  --color-accent: var(--accent);
+  --color-accentSecondary: var(--accentSecondary);
+  --color-accentTertiary: var(--accentTertiary);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-destructive: var(--destructive);
+  --font-sans: var(--font-body);
+  --font-mono: var(--font-body);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  position: relative;
+  overflow-x: hidden;
+  background: var(--background);
+  background-image:
+    radial-gradient(circle at 0% 0%, rgba(0, 255, 136, 0.1), transparent 35%),
+    radial-gradient(circle at 95% 10%, rgba(255, 0, 255, 0.12), transparent 30%),
+    radial-gradient(circle at 50% 100%, rgba(0, 212, 255, 0.08), transparent 35%);
+  color: var(--foreground);
+  font-family: var(--font-body), "JetBrains Mono", "Fira Code", monospace;
+  letter-spacing: 0.03em;
+  line-height: 1.7;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.35) 2px,
+    rgba(0, 0, 0, 0.35) 4px
+  );
+  opacity: 0.42;
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(0, 255, 136, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 255, 136, 0.03) 1px, transparent 1px);
+  background-size: 50px 50px;
+}
+
+a {
+  color: inherit;
+}
+
+.font-heading {
+  font-family: var(--font-heading), "Orbitron", "Share Tech Mono", monospace;
+}
+
+.font-label {
+  font-family: var(--font-label), "Share Tech Mono", monospace;
+}
+
+.skip-link {
+  position: fixed;
+  left: 1rem;
+  top: 0.5rem;
+  z-index: 100;
+  transform: translateY(-150%);
+  border: 1px solid var(--accent);
+  background: var(--background);
+  padding: 0.5rem 0.75rem;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}
+
+.cyber-grid-bg {
+  background-image:
+    linear-gradient(rgba(0, 255, 136, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 255, 136, 0.05) 1px, transparent 1px);
+  background-size: 36px 36px;
+}
+
+.cyber-chamfer {
+  clip-path: polygon(
+    0 12px,
+    12px 0,
+    calc(100% - 12px) 0,
+    100% 12px,
+    100% calc(100% - 12px),
+    calc(100% - 12px) 100%,
+    12px 100%,
+    0 calc(100% - 12px)
+  );
+}
+
+.cyber-chamfer-sm {
+  clip-path: polygon(
+    0 8px,
+    8px 0,
+    calc(100% - 8px) 0,
+    100% 8px,
+    100% calc(100% - 8px),
+    calc(100% - 8px) 100%,
+    8px 100%,
+    0 calc(100% - 8px)
+  );
+}
+
+.neon-glow {
+  box-shadow: var(--box-shadow-neon);
+}
+
+.neon-glow-secondary {
+  box-shadow: var(--box-shadow-neon-secondary);
+}
+
+.neon-glow-tertiary {
+  box-shadow: var(--box-shadow-neon-tertiary);
+}
+
+.terminal-cursor::after {
+  content: "_";
+  margin-left: 0.16em;
+  animation: blink 1s step-end infinite;
+}
+
+.cyber-glitch {
+  position: relative;
+  animation: glitch-jitter 7s steps(2, end) infinite;
+}
+
+.cyber-glitch::before,
+.cyber-glitch::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.85;
+}
+
+.cyber-glitch::before {
+  left: -1px;
+  text-shadow: -2px 0 #ff00ff;
+  animation: glitch-layer 3.2s infinite steps(4, end);
+}
+
+.cyber-glitch::after {
+  left: 1px;
+  text-shadow: 2px 0 #00d4ff;
+  animation: glitch-layer 2.6s infinite steps(3, end) reverse;
+}
+
+.mdx-content {
+  position: relative;
+}
+
+.mdx-content pre code {
+  font-family: var(--font-body), monospace;
+}
+
+.code-figure {
+  position: relative;
+}
+
+.code-figure [data-rehype-pretty-code-title] {
+  border-bottom: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 0.75rem 1rem;
+  font-family: var(--font-label), monospace;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--accentSecondary);
+}
+
+.code-block-shell {
+  position: relative;
+}
+
+.code-copy-button {
+  position: absolute;
+  right: 0.75rem;
+  top: 0.75rem;
+  z-index: 2;
+  min-height: 2rem;
+  border: 1px solid var(--border);
+  background: rgba(18, 18, 26, 0.88);
+  padding: 0.35rem 0.65rem;
+  font-family: var(--font-label), monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.16em;
+  color: var(--accent);
+  transition: all 150ms ease;
+}
+
+.code-copy-button:hover {
+  border-color: var(--accent);
+  box-shadow: var(--box-shadow-neon-sm);
+}
+
+.code-block-pre {
+  margin: 0;
+}
+
+.code-block-pre [data-line] {
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+}
+
+.code-block-pre [data-highlighted-line] {
+  margin-left: -0.75rem;
+  margin-right: -0.75rem;
+  border-left: 2px solid var(--accent);
+  background: rgba(0, 255, 136, 0.12);
+}
+
+.code-block-pre [data-highlighted-chars] {
+  border-radius: 2px;
+  background: rgba(255, 0, 255, 0.18);
+  box-shadow: 0 0 0 1px rgba(255, 0, 255, 0.25);
+}
+
+.code-block-pre code {
+  display: grid;
+  font-family: var(--font-body), monospace;
+  line-height: 1.75;
+}
+
+.admin-shell {
+  position: relative;
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+@keyframes glitch-jitter {
+  0%,
+  97%,
+  100% {
+    transform: translate(0);
+  }
+  98% {
+    transform: translate(-1px, 1px);
+  }
+  99% {
+    transform: translate(1px, -1px);
+  }
+}
+
+@keyframes glitch-layer {
+  0%,
+  100% {
+    clip-path: inset(0 0 0 0);
+    transform: translate(0);
+  }
+  20% {
+    clip-path: inset(0 0 60% 0);
+    transform: translate(-2px, 1px);
+  }
+  40% {
+    clip-path: inset(35% 0 20% 0);
+    transform: translate(1px, -1px);
+  }
+  60% {
+    clip-path: inset(50% 0 5% 0);
+    transform: translate(2px, 1px);
+  }
+  80% {
+    clip-path: inset(10% 0 65% 0);
+    transform: translate(-1px, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

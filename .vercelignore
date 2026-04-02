@@ -1,0 +1,12 @@
+.git
+.next
+node_modules
+node_modules_broken_*
+node_modules_incomplete_*
+package-lock.broken_*
+.env*
+coverage
+out
+build
+.DS_Store
+*.log

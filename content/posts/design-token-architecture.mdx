@@ -1,0 +1,54 @@
+---
+title: "设计 Token 架构：从色板到系统"
+date: "2026-03-12"
+summary: "如何把视觉规范沉淀为稳定 API，避免组件样式漂移。"
+tags:
+  - Design System
+  - CSS
+  - Architecture
+---
+
+## Token 不是变量集合
+
+很多团队把 token 当作“全局变量列表”，结果是组件层仍然硬编码样式。
+真正有效的 token 系统必须回答：
+
+- 哪些 token 对外暴露
+- 哪些 token 只在主题内部使用
+- 组件消费 token 的约束是什么
+
+## 三层模型
+
+### Primitive
+
+纯色值、基础间距、圆角、阴影，不和业务语义绑定。
+
+### Semantic
+
+如 `--color-surface-primary`、`--text-muted`，可跨组件复用。
+
+### Component Alias
+
+组件私有别名，例如按钮的 hover 边框色。
+
+## 落地规则
+
+1. 页面中禁止直接写 hex 值。
+2. 新组件必须先声明 token 依赖，再写样式。
+3. 每次视觉改版优先改 semantic token，不直接改组件。
+
+```css
+:root {
+  --color-surface-primary: var(--card);
+  --color-text-primary: var(--foreground);
+}
+
+.button-primary {
+  background: var(--color-surface-primary);
+  color: var(--color-text-primary);
+}
+```
+
+## 结果
+
+采用三层模型后，视觉更新的改动范围显著收敛，组件回归风险也更低。

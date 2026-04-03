@@ -1,4 +1,3 @@
-import { ActionFeedback } from "@/components/admin/action-feedback";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 
@@ -44,7 +43,6 @@ export default async function AdminPostDetailPage({
           <p className="text-sm text-mutedForeground">
             当前文章 ID: {post.id}，状态: {post.status}
           </p>
-          <ActionFeedback kind={query.kind} scope={query.scope} message={query.message} />
           <div className="flex flex-wrap gap-3">
             <Link
               href={post.status === "published" ? `/blog/${post.slug}` : `/blog/${post.slug}?preview=draft`}
@@ -56,7 +54,14 @@ export default async function AdminPostDetailPage({
             </Link>
           </div>
         </div>
-        <PostEditorForm post={post} />
+        <PostEditorForm
+          post={post}
+          feedback={{
+            kind: query.kind,
+            scope: query.scope,
+            message: query.message,
+          }}
+        />
       </CyberCard>
       <PostPreviewPanel post={post} />
     </div>

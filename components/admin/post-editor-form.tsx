@@ -3,6 +3,7 @@ import {
   savePostAction,
   savePostAndStayAction,
 } from "@/app/admin/actions";
+import { ActionFeedback } from "@/components/admin/action-feedback";
 import { CyberButton } from "@/components/ui/cyber-button";
 import { CyberInput } from "@/components/ui/cyber-input";
 import { cx } from "@/lib/utils";
@@ -10,9 +11,14 @@ import type { PostRecord } from "@/lib/content";
 
 type PostEditorFormProps = {
   post?: PostRecord | null;
+  feedback?: {
+    kind?: string;
+    scope?: string;
+    message?: string;
+  };
 };
 
-export function PostEditorForm({ post }: PostEditorFormProps) {
+export function PostEditorForm({ post, feedback }: PostEditorFormProps) {
   const tagValue = post?.tags.join(", ") ?? "";
   const isPublished = post?.status === "published";
   const draftButtonLabel = post ? "保存草稿" : "创建草稿";
@@ -133,6 +139,8 @@ export function PostEditorForm({ post }: PostEditorFormProps) {
             返回列表
           </CyberButton>
         </div>
+
+        <ActionFeedback kind={feedback?.kind} scope={feedback?.scope} message={feedback?.message} />
 
         <p className="text-xs uppercase tracking-[0.18em] text-mutedForeground">
           当前工作流: {isPublished ? "published" : "draft"} / 快速按钮会直接保存并跳转回编辑页。

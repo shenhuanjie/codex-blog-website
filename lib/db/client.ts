@@ -11,6 +11,8 @@ const sql = connectionString
   ? postgres(connectionString, {
       prepare: false,
       max: 1,
+      // Suppress repeated "already exists" notices from idempotent setup SQL.
+      onnotice: () => {},
     })
   : null;
 

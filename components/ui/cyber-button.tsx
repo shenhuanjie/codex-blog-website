@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { ButtonHTMLAttributes, ReactNode } from "react";
+import type { ButtonHTMLAttributes, ComponentPropsWithoutRef, ReactNode } from "react";
 
 import { cx } from "@/lib/utils";
 
@@ -10,12 +10,21 @@ type CyberButtonVariant =
   | "ghost"
   | "glitch";
 
-type CyberButtonProps = {
+type CyberButtonBaseProps = {
   children: ReactNode;
   className?: string;
   variant?: CyberButtonVariant;
-  href?: string;
+};
+
+type CyberButtonLinkProps = CyberButtonBaseProps & {
+  href: string;
+} & Omit<ComponentPropsWithoutRef<typeof Link>, "href" | "children" | "className">;
+
+type CyberButtonElementProps = CyberButtonBaseProps & {
+  href?: undefined;
 } & ButtonHTMLAttributes<HTMLButtonElement>;
+
+type CyberButtonProps = CyberButtonLinkProps | CyberButtonElementProps;
 
 const variants: Record<CyberButtonVariant, string> = {
   default:
@@ -32,29 +41,52 @@ const variants: Record<CyberButtonVariant, string> = {
 const baseClassName =
   "cyber-chamfer-sm inline-flex min-h-11 items-center justify-center gap-2 px-4 py-2 text-center font-sans text-sm leading-tight font-semibold tracking-[0.04em] whitespace-normal transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:tracking-[0.08em] md:whitespace-nowrap";
 
-export function CyberButton({
+export function CyberButton(props: CyberButtonProps) {
+  if ("href" in props && typeof props.href === "string") {
+    return renderLinkButton(props as CyberButtonLinkProps);
+  }
+
+  return renderElementButton(props as CyberButtonElementProps);
+}
+
+function renderLinkButton({
+  href,
   children,
   className,
   variant = "default",
-  href,
-  ...buttonProps
-}: CyberButtonProps) {
+  ...linkProps
+}: CyberButtonLinkProps) {
   const classes = cx(baseClassName, variants[variant], className);
 
-  if (href) {
-    return (
-      <Link
-        href={href}
-        className={classes}
-      >
-        {children}
-      </Link>
-    );
-  }
+  return (
+    <Link
+      href={href}
+      className={classes}
+      {...linkProps}
+    >
+      {children}
+    </Link>
+  );
+}
+
+function renderElementButton({
+  children,
+  className,
+  variant = "default",
+  type = "button",
+  formAction,
+  name,
+  value,
+  ...buttonProps
+}: CyberButtonElementProps) {
+  const classes = cx(baseClassName, variants[variant], className);
 
   return (
     <button
-      type="button"
+      type={type}
+      formAction={formAction}
+      name={name}
+      value={value}
       className={classes}
       {...buttonProps}
     >

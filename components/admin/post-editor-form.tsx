@@ -5,6 +5,7 @@ import {
 } from "@/app/admin/actions";
 import { CyberButton } from "@/components/ui/cyber-button";
 import { CyberInput } from "@/components/ui/cyber-input";
+import { cx } from "@/lib/utils";
 import type { PostRecord } from "@/lib/content";
 
 type PostEditorFormProps = {
@@ -16,6 +17,8 @@ export function PostEditorForm({ post }: PostEditorFormProps) {
   const isPublished = post?.status === "published";
   const draftButtonLabel = post ? "保存草稿" : "创建草稿";
   const publishButtonLabel = post ? (isPublished ? "更新已发布" : "发布并更新") : "创建并发布";
+  const quickActionButtonClassName =
+    "cyber-chamfer-sm inline-flex min-h-11 items-center justify-center gap-2 px-4 py-2 text-center font-sans text-sm leading-tight font-semibold tracking-[0.04em] whitespace-normal transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:tracking-[0.08em] md:whitespace-nowrap w-full sm:w-auto sm:min-w-36";
 
   return (
     <div className="space-y-6">
@@ -102,26 +105,30 @@ export function PostEditorForm({ post }: PostEditorFormProps) {
           <CyberButton type="submit" className="w-full sm:w-auto sm:min-w-36">
             {post ? "更新文章" : "创建文章"}
           </CyberButton>
-          <CyberButton
+          <button
             type="submit"
-            variant="default"
-            className="w-full sm:w-auto sm:min-w-36"
+            className={cx(
+              quickActionButtonClassName,
+              "border-2 border-accent bg-transparent text-accent hover:bg-accent/10 hover:text-accent hover:shadow-[var(--box-shadow-neon-sm)]"
+            )}
             formAction={savePostAndStayAction}
             name="_intent"
             value="draft"
           >
             {draftButtonLabel}
-          </CyberButton>
-          <CyberButton
+          </button>
+          <button
             type="submit"
-            variant="secondary"
-            className="w-full sm:w-auto sm:min-w-36"
+            className={cx(
+              quickActionButtonClassName,
+              "border-2 border-accentSecondary bg-transparent text-accentSecondary hover:bg-accentSecondary/10 hover:text-accentSecondary hover:shadow-[var(--box-shadow-neon-secondary)]"
+            )}
             formAction={savePostAndStayAction}
             name="_intent"
             value="publish"
           >
             {publishButtonLabel}
-          </CyberButton>
+          </button>
           <CyberButton href="/admin/posts" variant="outline" className="w-full sm:w-auto">
             返回列表
           </CyberButton>

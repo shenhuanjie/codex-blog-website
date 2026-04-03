@@ -1,5 +1,6 @@
 import { Container } from "@/components/layout/container";
 import { Section } from "@/components/layout/section";
+import { AdminSignOutButton } from "@/components/admin/admin-sign-out-button";
 import { GithubSignInButton } from "@/components/admin/github-sign-in-button";
 import { CyberButton } from "@/components/ui/cyber-button";
 import { CyberCard } from "@/components/ui/cyber-card";
@@ -98,9 +99,7 @@ export default async function AdminLayout({
               <CyberButton href="/admin/admins" variant="outline" className="px-3 text-[11px] sm:text-xs">
                 Admins
               </CyberButton>
-              <CyberButton href="/api/auth/signout" variant="secondary" className="px-3 text-[11px] sm:text-xs">
-                Sign Out
-              </CyberButton>
+              <AdminSignOutButton />
             </div>
           </div>
         </div>

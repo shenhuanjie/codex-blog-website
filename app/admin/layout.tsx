@@ -72,7 +72,7 @@ export default async function AdminLayout({
   return (
     <Section className="py-10">
       <Container className="space-y-6">
-        <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <p className="font-label text-xs uppercase tracking-[0.24em] text-accent">
               Admin Console
@@ -81,25 +81,27 @@ export default async function AdminLayout({
               {session.user?.login} 已登录，可以管理文章与查看统计。
             </p>
           </div>
-          <div className="flex flex-wrap gap-3">
-            <CyberButton href="/admin" variant="outline">
-              Dashboard
-            </CyberButton>
-            <CyberButton href="/admin/posts" variant="outline">
-              Posts
-            </CyberButton>
-            <CyberButton href="/admin/tags" variant="outline">
-              Tags
-            </CyberButton>
-            <CyberButton href="/admin/tokens" variant="outline">
-              Tokens
-            </CyberButton>
-            <CyberButton href="/admin/admins" variant="outline">
-              Admins
-            </CyberButton>
-            <CyberButton href="/api/auth/signout" variant="secondary">
-              Sign Out
-            </CyberButton>
+          <div className="w-full overflow-x-auto pb-1 md:w-auto md:overflow-visible md:pb-0">
+            <div className="flex min-w-max gap-2">
+              <CyberButton href="/admin" variant="outline" className="px-3 text-[11px] sm:text-xs">
+                Dashboard
+              </CyberButton>
+              <CyberButton href="/admin/posts" variant="outline" className="px-3 text-[11px] sm:text-xs">
+                Posts
+              </CyberButton>
+              <CyberButton href="/admin/tags" variant="outline" className="px-3 text-[11px] sm:text-xs">
+                Tags
+              </CyberButton>
+              <CyberButton href="/admin/tokens" variant="outline" className="px-3 text-[11px] sm:text-xs">
+                Tokens
+              </CyberButton>
+              <CyberButton href="/admin/admins" variant="outline" className="px-3 text-[11px] sm:text-xs">
+                Admins
+              </CyberButton>
+              <CyberButton href="/api/auth/signout" variant="secondary" className="px-3 text-[11px] sm:text-xs">
+                Sign Out
+              </CyberButton>
+            </div>
           </div>
         </div>
         {children}

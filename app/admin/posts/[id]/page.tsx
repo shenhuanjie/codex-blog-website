@@ -35,7 +35,7 @@ export default async function AdminPostDetailPage({
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
       <CyberCard variant="terminal" className="space-y-5">
         <div className="space-y-3">
           <p className="font-heading text-2xl uppercase tracking-[0.14em] text-foreground">
@@ -47,12 +47,12 @@ export default async function AdminPostDetailPage({
           <ActionFeedback kind={query.kind} scope={query.scope} message={query.message} />
           <div className="flex flex-wrap gap-3">
             <Link
-              href={`/blog/${post.slug}`}
+              href={post.status === "published" ? `/blog/${post.slug}` : `/blog/${post.slug}?preview=draft`}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex min-h-11 items-center justify-center gap-2 border border-border px-4 py-2 text-xs uppercase tracking-[0.2em] text-foreground transition-colors hover:border-accent hover:text-accent"
+              className="inline-flex min-h-11 w-full items-center justify-center gap-2 border border-border px-4 py-2 text-center text-xs uppercase tracking-[0.2em] text-foreground transition-colors hover:border-accent hover:text-accent sm:w-auto"
             >
-              打开公开预览
+              {post.status === "published" ? "打开公开预览" : "打开草稿预览"}
             </Link>
           </div>
         </div>

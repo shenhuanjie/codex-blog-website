@@ -48,7 +48,7 @@ export default async function AdminPostsPage({
             共 {filtered.length} 篇文章，支持状态与关键词筛选。
           </p>
         </div>
-        <CyberButton href="/admin/posts/new">
+        <CyberButton href="/admin/posts/new" className="w-full sm:w-auto">
           新建文章
         </CyberButton>
       </div>
@@ -56,7 +56,7 @@ export default async function AdminPostsPage({
       <ActionFeedback kind={kind} scope={scope} message={message} />
 
       <CyberCard variant="terminal" className="space-y-4">
-        <form className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_180px_auto]">
+        <form className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_180px_auto]">
           <input
             type="text"
             name="q"
@@ -73,7 +73,7 @@ export default async function AdminPostsPage({
             <option value="published">published</option>
             <option value="draft">draft</option>
           </select>
-          <CyberButton type="submit">应用筛选</CyberButton>
+          <CyberButton type="submit" className="w-full lg:w-auto">应用筛选</CyberButton>
         </form>
       </CyberCard>
 
@@ -81,7 +81,7 @@ export default async function AdminPostsPage({
         {filtered.map((record) => (
           <CyberCard key={record.id} hoverEffect className="space-y-4">
             <div className="flex flex-wrap items-start justify-between gap-4">
-              <div className="space-y-2">
+              <div className="min-w-0 space-y-2">
                 <p className="font-heading text-xl uppercase tracking-[0.08em] text-foreground">
                   {record.title}
                 </p>
@@ -98,7 +98,7 @@ export default async function AdminPostsPage({
                   编辑
                 </CyberButton>
                 <Link
-                  href={`/blog/${record.slug}`}
+                  href={record.status === "published" ? `/blog/${record.slug}` : `/blog/${record.slug}?preview=draft`}
                   className="inline-flex min-h-11 items-center text-xs uppercase tracking-[0.2em] text-accent hover:text-accentSecondary"
                 >
                   预览

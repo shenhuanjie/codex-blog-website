@@ -64,12 +64,12 @@ export function McpTokensPanel({ tokens, events }: McpTokensPanelProps) {
           <select
             name="scope"
             defaultValue="write"
-            className="cyber-chamfer-sm min-h-11 border border-input bg-input px-3 text-sm text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:w-40"
+            className="cyber-chamfer-sm min-h-11 w-full border border-input bg-input px-3 text-sm text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:w-40"
           >
             <option value="write">write</option>
             <option value="read">read</option>
           </select>
-          <CyberButton type="submit" className="sm:min-w-36" disabled={isPending}>
+          <CyberButton type="submit" className="w-full sm:min-w-36" disabled={isPending}>
             {isPending ? "生成中..." : "生成 Token"}
           </CyberButton>
         </form>
@@ -148,7 +148,7 @@ export function McpTokensPanel({ tokens, events }: McpTokensPanelProps) {
                   {revoked ? null : (
                     <form action={revokeMcpTokenAction}>
                       <input type="hidden" name="id" value={token.id} />
-                      <CyberButton type="submit" variant="secondary">
+                      <CyberButton type="submit" variant="secondary" className="w-full sm:w-auto">
                         撤销 Token
                       </CyberButton>
                     </form>

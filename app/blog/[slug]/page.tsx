@@ -10,12 +10,14 @@ import { Container } from "@/components/layout/container";
 import { Section } from "@/components/layout/section";
 import { CyberCard } from "@/components/ui/cyber-card";
 import { TagChip } from "@/components/ui/tag-chip";
+import { getAdminSession } from "@/lib/auth/session";
 import { getAdjacentPosts, getAllPosts, getPostBySlug } from "@/lib/content";
 import { siteConfig } from "@/lib/site";
 import { slugifyTag } from "@/lib/utils";
 
 type PostPageProps = {
   params: Promise<{ slug: string }>;
+  searchParams?: Promise<{ preview?: string }>;
 };
 
 type TocItem = {
@@ -72,12 +74,26 @@ export async function generateMetadata({ params }: PostPageProps): Promise<Metad
   };
 }
 
-export default async function PostPage({ params }: PostPageProps) {
+export default async function PostPage({ params, searchParams }: PostPageProps) {
   const { slug } = await params;
+  const query = (await searchParams) ?? {};
+  const wantsDraftPreview = query.preview === "draft";
   const post = await getPostBySlug(slug);
 
-  if (!post || post.draft) {
+  if (!post) {
     notFound();
+  }
+
+  if (post.draft && !wantsDraftPreview) {
+    notFound();
+  }
+
+  if (post.draft && wantsDraftPreview) {
+    const session = await getAdminSession();
+
+    if (!session) {
+      notFound();
+    }
   }
 
   const adjacent = await getAdjacentPosts(post.slug);
@@ -86,7 +102,7 @@ export default async function PostPage({ params }: PostPageProps) {
   return (
     <Section className="pt-10 md:pt-14">
       <Container>
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
           <CyberCard variant="default" className="space-y-6 p-6 md:p-8">
             <Link
               href="/blog"
@@ -97,15 +113,22 @@ export default async function PostPage({ params }: PostPageProps) {
             </Link>
 
             <header className="space-y-4 border-b border-border pb-6">
+              {post.draft ? (
+                <p className="font-label text-xs uppercase tracking-[0.22em] text-accentSecondary">
+                  Draft Preview / Admin Only
+                </p>
+              ) : null}
               <h1 className="font-heading text-3xl font-bold uppercase tracking-[0.12em] text-foreground md:text-4xl">
                 {post.title}
               </h1>
               <p className="text-mutedForeground">{post.summary}</p>
               <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
                 <PostMeta post={post} />
-                <div className="text-xs uppercase tracking-[0.16em] text-mutedForeground">
-                  <ViewCounter slug={post.slug} />
-                </div>
+                {post.draft ? null : (
+                  <div className="text-xs uppercase tracking-[0.16em] text-mutedForeground">
+                    <ViewCounter slug={post.slug} />
+                  </div>
+                )}
               </div>
               <div className="flex flex-wrap gap-2">
                 {post.tags.map((tag) => (
@@ -115,9 +138,9 @@ export default async function PostPage({ params }: PostPageProps) {
             </header>
 
             <MDXRenderer source={post.content} />
-            <GiscusComments term={post.slug} />
+            {post.draft ? null : <GiscusComments term={post.slug} />}
 
-            <nav className="grid gap-4 border-t border-border pt-6 sm:grid-cols-2">
+            <nav className="grid grid-cols-1 gap-4 border-t border-border pt-6 sm:grid-cols-2">
               <CyberCard variant="terminal" className="h-full">
                 {adjacent.previous ? (
                   <Link href={`/blog/${adjacent.previous.slug}`} className="group block">

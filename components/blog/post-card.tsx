@@ -41,7 +41,7 @@ export function PostCard({ post, highlightQuery }: PostCardProps) {
     <CyberCard variant="terminal" hoverEffect className="group flex h-full flex-col justify-between">
       <div className="space-y-4">
         <PostMeta post={post} />
-        <h3 className="font-heading text-2xl font-bold uppercase tracking-[0.08em] text-foreground transition-colors group-hover:text-accent">
+        <h3 className="font-heading text-xl font-bold uppercase tracking-[0.06em] text-foreground transition-colors group-hover:text-accent sm:text-2xl sm:tracking-[0.08em]">
           <Link href={`/blog/${post.slug}`}>{highlightText(post.title, highlightQuery)}</Link>
         </h3>
         <p className="text-sm leading-relaxed text-mutedForeground">

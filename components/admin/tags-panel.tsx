@@ -28,7 +28,7 @@ export function TagsPanel({ tags }: TagsPanelProps) {
             当前标签数量不足，暂时无法执行合并。
           </p>
         ) : (
-          <form action={mergeTagsAction} className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
+          <form action={mergeTagsAction} className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
             <select
               name="sourceId"
               defaultValue={tags[0]?.id}
@@ -51,7 +51,7 @@ export function TagsPanel({ tags }: TagsPanelProps) {
                 </option>
               ))}
             </select>
-            <CyberButton type="submit">
+            <CyberButton type="submit" className="w-full lg:w-auto">
               合并
             </CyberButton>
           </form>
@@ -74,13 +74,13 @@ export function TagsPanel({ tags }: TagsPanelProps) {
             </div>
 
             <div className="flex flex-wrap gap-3">
-              <CyberButton href={`/blog/tag/${tag.slug}`} variant="outline">
+              <CyberButton href={`/blog/tag/${tag.slug}`} variant="outline" className="w-full sm:w-auto">
                 预览
               </CyberButton>
               {tag.postCount === 0 ? (
                 <form action={deleteTagAction}>
                   <input type="hidden" name="id" value={tag.id} />
-                  <CyberButton type="submit" variant="secondary">
+                  <CyberButton type="submit" variant="secondary" className="w-full sm:w-auto">
                     删除
                   </CyberButton>
                 </form>
@@ -92,10 +92,10 @@ export function TagsPanel({ tags }: TagsPanelProps) {
             </div>
           </div>
 
-          <form action={renameTagAction} className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto]">
+          <form action={renameTagAction} className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_auto]">
             <input type="hidden" name="id" value={tag.id} />
             <CyberInput name="name" defaultValue={tag.name} />
-            <CyberButton type="submit" variant="outline">
+            <CyberButton type="submit" variant="outline" className="w-full lg:w-auto">
               重命名
             </CyberButton>
           </form>

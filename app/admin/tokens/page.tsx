@@ -30,7 +30,7 @@ export default async function TokensPage({ searchParams }: TokensPageProps) {
             管理本地 MCP 客户端的发布凭证。生成后仅展示一次明文，之后只能撤销，不能回看。
           </p>
         </div>
-        <CyberButton href="/admin" variant="outline">
+        <CyberButton href="/admin" variant="outline" className="w-full sm:w-auto">
           返回 Dashboard
         </CyberButton>
       </div>

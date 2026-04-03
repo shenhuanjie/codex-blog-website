@@ -28,7 +28,7 @@ export default async function AdminTagsPage({ searchParams }: AdminTagsPageProps
             共 {tags.length} 个标签，{unusedCount} 个可删除的未使用标签。
           </p>
         </div>
-        <CyberButton href="/admin/posts" variant="outline">
+        <CyberButton href="/admin/posts" variant="outline" className="w-full sm:w-auto">
           返回文章
         </CyberButton>
       </div>

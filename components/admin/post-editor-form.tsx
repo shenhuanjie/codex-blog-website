@@ -22,7 +22,7 @@ export function PostEditorForm({ post }: PostEditorFormProps) {
       <form action={savePostAction} className="space-y-5">
         <input type="hidden" name="id" defaultValue={post?.id ?? ""} />
 
-        <div className="grid gap-5 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
           <div className="space-y-2">
             <label className="font-label text-xs uppercase tracking-[0.2em] text-mutedForeground">
               标题
@@ -51,7 +51,7 @@ export function PostEditorForm({ post }: PostEditorFormProps) {
           />
         </div>
 
-        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_220px]">
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_220px]">
           <div className="space-y-2">
             <label className="font-label text-xs uppercase tracking-[0.2em] text-mutedForeground">
               标签
@@ -98,14 +98,14 @@ export function PostEditorForm({ post }: PostEditorFormProps) {
           />
         </div>
 
-        <div className="flex flex-wrap gap-3">
-          <CyberButton type="submit" className="min-w-36">
+        <div className="grid grid-cols-1 gap-3 sm:flex sm:flex-wrap">
+          <CyberButton type="submit" className="w-full sm:w-auto sm:min-w-36">
             {post ? "更新文章" : "创建文章"}
           </CyberButton>
           <CyberButton
             type="submit"
             variant="default"
-            className="min-w-36"
+            className="w-full sm:w-auto sm:min-w-36"
             formAction={savePostAndStayAction}
             name="_intent"
             value="draft"
@@ -115,14 +115,14 @@ export function PostEditorForm({ post }: PostEditorFormProps) {
           <CyberButton
             type="submit"
             variant="secondary"
-            className="min-w-36"
+            className="w-full sm:w-auto sm:min-w-36"
             formAction={savePostAndStayAction}
             name="_intent"
             value="publish"
           >
             {publishButtonLabel}
           </CyberButton>
-          <CyberButton href="/admin/posts" variant="outline">
+          <CyberButton href="/admin/posts" variant="outline" className="w-full sm:w-auto">
             返回列表
           </CyberButton>
         </div>
@@ -135,7 +135,7 @@ export function PostEditorForm({ post }: PostEditorFormProps) {
       {post ? (
         <form action={deletePostAction}>
           <input type="hidden" name="id" value={post.id} />
-          <CyberButton type="submit" variant="secondary">删除文章</CyberButton>
+          <CyberButton type="submit" variant="secondary" className="w-full sm:w-auto">删除文章</CyberButton>
         </form>
       ) : null}
     </div>

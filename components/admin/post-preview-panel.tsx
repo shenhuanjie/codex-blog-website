@@ -26,6 +26,9 @@ export function PostPreviewPanel({ post }: PostPreviewPanelProps) {
   }
 
   const canOpenPublicPreview = post.status === "published";
+  const previewHref = canOpenPublicPreview
+    ? `/blog/${post.slug}`
+    : `/blog/${post.slug}?preview=draft`;
 
   return (
     <CyberCard variant="holographic" className="space-y-6">
@@ -51,20 +54,14 @@ export function PostPreviewPanel({ post }: PostPreviewPanelProps) {
             <span className="font-label text-accent">ST</span>
             {post.status}
           </span>
-          {canOpenPublicPreview ? (
-            <Link
-              href={`/blog/${post.slug}`}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex min-h-11 items-center text-xs uppercase tracking-[0.2em] text-accent transition-colors hover:text-accentSecondary"
-            >
-              Open Public Preview
-            </Link>
-          ) : (
-            <span className="font-label text-[10px] uppercase tracking-[0.2em] text-mutedForeground">
-              draft only
-            </span>
-          )}
+          <Link
+            href={previewHref}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex min-h-11 w-full items-center justify-center text-center text-xs uppercase tracking-[0.2em] text-accent transition-colors hover:text-accentSecondary sm:w-auto"
+          >
+            {canOpenPublicPreview ? "Open Public Preview" : "Open Draft Preview"}
+          </Link>
         </div>
         <div className="flex flex-wrap gap-2">
           {post.tags.map((tag) => (

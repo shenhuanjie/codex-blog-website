@@ -18,7 +18,7 @@ export function SectionHeading({
   action,
 }: SectionHeadingProps) {
   return (
-    <header className={cx("mb-8 flex flex-wrap items-end justify-between gap-4", className)}>
+    <header className={cx("mb-8 flex flex-col items-start justify-between gap-4 sm:flex-row sm:flex-wrap sm:items-end", className)}>
       <div className="space-y-3">
         {eyebrow ? (
           <p className="font-label text-xs uppercase tracking-[0.28em] text-accent terminal-cursor">
@@ -30,7 +30,7 @@ export function SectionHeading({
         </h2>
         {description ? <p className="max-w-2xl text-mutedForeground">{description}</p> : null}
       </div>
-      {action}
+      {action ? <div className="w-full sm:w-auto">{action}</div> : null}
     </header>
   );
 }

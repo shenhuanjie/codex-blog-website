@@ -38,7 +38,7 @@ export function AdminUsersPanel({ admins }: AdminUsersPanelProps) {
               required
             />
           </div>
-          <CyberButton type="submit" className="sm:min-w-32">
+          <CyberButton type="submit" className="w-full sm:min-w-32">
             添加
           </CyberButton>
         </form>
@@ -75,7 +75,7 @@ export function AdminUsersPanel({ admins }: AdminUsersPanelProps) {
                 </div>
                 <form action={deleteAdminUserAction}>
                   <input type="hidden" name="id" value={admin.id} />
-                  <CyberButton type="submit" variant="secondary">
+                  <CyberButton type="submit" variant="secondary" className="w-full sm:w-auto">
                     删除
                   </CyberButton>
                 </form>

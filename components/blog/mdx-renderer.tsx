@@ -67,7 +67,7 @@ export async function MDXRenderer({ source, className }: MDXRendererProps) {
         <h1
           {...props}
           id={typeof id === "string" ? id : headingId(children)}
-          className="mt-10 scroll-mt-28 font-heading text-4xl font-bold uppercase tracking-[0.12em] text-foreground"
+          className="mt-10 scroll-mt-28 font-heading text-4xl font-bold uppercase tracking-[0.12em] break-words text-foreground"
         >
           {children}
         </h1>
@@ -76,7 +76,7 @@ export async function MDXRenderer({ source, className }: MDXRendererProps) {
         <h2
           {...props}
           id={typeof id === "string" ? id : headingId(children)}
-          className="mt-10 scroll-mt-28 border-l-2 border-accent pl-4 font-heading text-3xl font-semibold uppercase tracking-[0.1em] text-foreground"
+          className="mt-10 scroll-mt-28 border-l-2 border-accent pl-4 font-heading text-3xl font-semibold uppercase tracking-[0.1em] break-words text-foreground"
         >
           {children}
         </h2>
@@ -85,7 +85,7 @@ export async function MDXRenderer({ source, className }: MDXRendererProps) {
         <h3
           {...props}
           id={typeof id === "string" ? id : headingId(children)}
-          className="mt-8 scroll-mt-28 font-heading text-2xl font-semibold uppercase tracking-[0.08em] text-foreground"
+          className="mt-8 scroll-mt-28 font-heading text-2xl font-semibold uppercase tracking-[0.08em] break-words text-foreground"
         >
           {children}
         </h3>
@@ -131,7 +131,7 @@ export async function MDXRenderer({ source, className }: MDXRendererProps) {
           {...props}
           language={typeof props["data-language"] === "string" ? props["data-language"] : undefined}
           className={cx(
-            "overflow-x-auto p-4 text-sm",
+            "overflow-x-auto px-4 pb-4 pt-12 text-sm",
             preClassName
           )}
         />

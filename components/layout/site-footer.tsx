@@ -13,7 +13,7 @@ const quickLinks = [
 export function SiteFooter() {
   return (
     <footer className="relative border-t border-border py-10">
-      <Container className="grid gap-8 text-sm text-mutedForeground md:grid-cols-4">
+      <Container className="grid grid-cols-1 gap-8 text-sm text-mutedForeground md:grid-cols-4">
         <div className="space-y-2 md:col-span-2">
           <p className="font-heading text-lg uppercase tracking-[0.2em] text-accent">NeonStack</p>
           <p>{siteConfig.description}</p>

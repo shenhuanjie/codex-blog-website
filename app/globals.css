@@ -80,7 +80,6 @@ body {
 
 body {
   position: relative;
-  overflow-x: hidden;
   background: var(--background);
   background-image:
     radial-gradient(circle at 0% 0%, rgba(0, 255, 136, 0.1), transparent 35%),
@@ -229,6 +228,8 @@ a {
 
 .mdx-content {
   position: relative;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .mdx-content pre code {
@@ -257,7 +258,7 @@ a {
 .code-copy-button {
   position: absolute;
   right: 0.75rem;
-  top: 0.75rem;
+  top: 0.5rem;
   z-index: 2;
   min-height: 2rem;
   border: 1px solid var(--border);
@@ -277,6 +278,9 @@ a {
 
 .code-block-pre {
   margin: 0;
+  width: 100%;
+  overflow-wrap: normal;
+  word-break: normal;
 }
 
 .code-block-pre [data-line] {
@@ -285,9 +289,7 @@ a {
 }
 
 .code-block-pre [data-highlighted-line] {
-  margin-left: -0.75rem;
-  margin-right: -0.75rem;
-  border-left: 2px solid var(--accent);
+  box-shadow: inset 2px 0 0 var(--accent);
   background: rgba(0, 255, 136, 0.12);
 }
 
@@ -298,7 +300,10 @@ a {
 }
 
 .code-block-pre code {
-  display: grid;
+  display: block;
+  min-width: max-content;
+  width: max-content;
+  white-space: pre;
   font-family: var(--font-body), monospace;
   line-height: 1.75;
 }
@@ -359,5 +364,15 @@ a {
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+@media (max-width: 640px) {
+  body::before {
+    opacity: 0.28;
+  }
+
+  body::after {
+    background-size: 42px 42px;
   }
 }

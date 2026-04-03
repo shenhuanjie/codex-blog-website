@@ -25,9 +25,9 @@ export default async function Home() {
     <>
       <Section className="pb-8 pt-14 md:pt-20">
         <Container>
-          <div className="grid items-start gap-10 lg:grid-cols-5">
+          <div className="grid grid-cols-1 items-start gap-10 lg:grid-cols-5">
             <div className="space-y-7 lg:col-span-3">
-              <p className="font-label text-xs uppercase tracking-[0.3em] text-accent terminal-cursor">
+              <p className="font-label text-xs uppercase tracking-[0.2em] text-accent terminal-cursor sm:tracking-[0.3em]">
                 Access Point // Personal Engineering Feed
               </p>
 
@@ -97,7 +97,7 @@ export default async function Home() {
               title="精选技术文章"
               description="围绕 React 工程化、渲染性能与产品可维护性的实战文章。"
               action={
-                <CyberButton href="/blog" variant="outline">
+                <CyberButton href="/blog" variant="outline" className="w-full sm:w-auto">
                   全部文章
                 </CyberButton>
               }
@@ -109,7 +109,7 @@ export default async function Home() {
 
       <Section className="pt-8">
         <Container>
-          <div className="grid gap-6 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             <TerminalPanel
               title="System Log"
               lines={[

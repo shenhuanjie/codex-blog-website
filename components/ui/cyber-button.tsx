@@ -30,7 +30,7 @@ const variants: Record<CyberButtonVariant, string> = {
 };
 
 const baseClassName =
-  "cyber-chamfer-sm inline-flex min-h-11 items-center justify-center gap-2 px-4 py-2 font-sans text-sm leading-none font-semibold tracking-[0.04em] whitespace-nowrap transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:tracking-[0.08em]";
+  "cyber-chamfer-sm inline-flex min-h-11 items-center justify-center gap-2 px-4 py-2 text-center font-sans text-sm leading-tight font-semibold tracking-[0.04em] whitespace-normal transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:tracking-[0.08em] md:whitespace-nowrap";
 
 export function CyberButton({
   children,

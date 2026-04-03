@@ -16,7 +16,7 @@ export function PostMeta({ post }: PostMetaProps) {
         <span className="font-label text-accent">TM</span>
         {post.readingTime}
       </span>
-      <span className="text-accent">{post.tags.join(" / ")}</span>
+      <span className="break-words text-accent">{post.tags.join(" / ")}</span>
     </div>
   );
 }

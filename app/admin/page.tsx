@@ -28,7 +28,7 @@ export default async function AdminPage() {
 
   return (
     <div className="grid gap-6">
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <CyberCard className="space-y-2">
           <p className="font-label text-xs uppercase tracking-[0.2em] text-mutedForeground">
             Published
@@ -61,26 +61,26 @@ export default async function AdminPage() {
         <p className="font-heading text-xl uppercase tracking-[0.14em] text-foreground">
           快速操作
         </p>
-        <div className="flex flex-wrap gap-3">
-          <CyberButton href="/admin/posts/new">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:flex lg:flex-wrap">
+          <CyberButton href="/admin/posts/new" className="w-full lg:w-auto">
             新建文章
           </CyberButton>
-          <CyberButton href="/admin/posts" variant="outline">
+          <CyberButton href="/admin/posts" variant="outline" className="w-full lg:w-auto">
             管理文章
           </CyberButton>
-          <CyberButton href="/admin/tags" variant="outline">
+          <CyberButton href="/admin/tags" variant="outline" className="w-full lg:w-auto">
             管理标签
           </CyberButton>
-          <CyberButton href="/admin/tokens" variant="outline">
+          <CyberButton href="/admin/tokens" variant="outline" className="w-full lg:w-auto">
             管理 Tokens
           </CyberButton>
-          <CyberButton href="/admin/admins" variant="outline">
+          <CyberButton href="/admin/admins" variant="outline" className="w-full lg:w-auto">
             管理管理员
           </CyberButton>
         </div>
       </CyberCard>
 
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <CyberCard hoverEffect className="space-y-3">
           <p className="font-heading text-lg uppercase tracking-[0.14em] text-foreground">
             Posts Control
@@ -143,7 +143,7 @@ export default async function AdminPage() {
           </p>
         </div>
 
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2">
           <div className="cyber-chamfer border border-border bg-background/40 p-4">
             <p className="font-label text-xs uppercase tracking-[0.2em] text-mutedForeground">
               Database
@@ -160,7 +160,7 @@ export default async function AdminPage() {
             <p className="mt-2 font-heading text-lg text-foreground">
               {hasAuth ? "Configured" : "Missing AUTH_*"}
             </p>
-            <p className="mt-2 text-xs text-mutedForeground">
+            <p className="mt-2 break-all text-xs text-mutedForeground">
               Callback: {callbackUrl}
             </p>
           </div>

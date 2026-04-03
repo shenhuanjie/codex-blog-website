@@ -42,9 +42,9 @@ export default function AboutPage() {
   return (
     <Section className="pt-12 md:pt-16">
       <Container className="space-y-10">
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
           <div className="space-y-6">
-            <p className="font-label text-xs uppercase tracking-[0.3em] text-accent terminal-cursor">
+            <p className="font-label text-xs uppercase tracking-[0.2em] text-accent terminal-cursor sm:tracking-[0.3em]">
               Operator Profile
             </p>
             <GlitchHeadline text="SYSTEM DESIGNER / FRONTEND ENGINEER" className="text-4xl sm:text-5xl lg:text-6xl" />

@@ -27,7 +27,7 @@ export default async function AdminsPage({ searchParams }: AdminsPageProps) {
             管理数据库中的管理员账号，白名单和数据库记录会同时参与鉴权。
           </p>
         </div>
-        <CyberButton href="/admin" variant="outline">
+        <CyberButton href="/admin" variant="outline" className="w-full sm:w-auto">
           返回 Dashboard
         </CyberButton>
       </div>

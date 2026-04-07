@@ -2,11 +2,12 @@ import { Container } from "@/components/layout/container";
 import { Section } from "@/components/layout/section";
 import { AdminSignOutButton } from "@/components/admin/admin-sign-out-button";
 import { GithubSignInButton } from "@/components/admin/github-sign-in-button";
+import { LocalAdminSignInButton } from "@/components/admin/local-admin-sign-in-button";
 import { CyberButton } from "@/components/ui/cyber-button";
 import { CyberCard } from "@/components/ui/cyber-card";
 import { hasSeededAdminAccess } from "@/lib/auth/admins";
 import { getAdminSession } from "@/lib/auth/session";
-import { hasAdminWhitelistConfigured, isAuthConfigured } from "@/lib/env";
+import { hasAdminWhitelistConfigured, isAuthConfigured, isLocalAdminLoginEnabled } from "@/lib/env";
 import { isDatabaseConfigured } from "@/lib/db/client";
 import { siteConfig } from "@/lib/site";
 
@@ -16,12 +17,14 @@ export default async function AdminLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   const hasAuth = isAuthConfigured();
+  const hasLocalAdminLogin = isLocalAdminLoginEnabled();
   const hasDb = isDatabaseConfigured();
   const hasAdminWhitelist = hasAdminWhitelistConfigured();
   const hasSeededAdmins = await hasSeededAdminAccess();
   const callbackUrl = `${siteConfig.url}/api/auth/callback/github`;
+  const requiresSeededAdmins = !hasSeededAdmins && !hasLocalAdminLogin;
 
-  if (!hasAuth || !hasDb || !hasSeededAdmins) {
+  if ((!hasAuth && !hasLocalAdminLogin) || !hasDb || requiresSeededAdmins) {
     return (
       <Section className="py-16">
         <Container>
@@ -31,13 +34,13 @@ export default async function AdminLayout({
             </p>
             <p className="text-mutedForeground">
               后台已经接入，但还需要补齐环境变量后才能使用。当前会检查 GitHub 登录和
-              Postgres 连接。
+              本地开发直登能力以及 Postgres 连接。
             </p>
             <ul className="space-y-2 text-sm text-mutedForeground">
               <li>`POSTGRES_URL`: {hasDb ? "ok" : "missing"}</li>
-              <li>`AUTH_SECRET` / GitHub OAuth: {hasAuth ? "ok" : "missing"}</li>
+              <li>`AUTH_SECRET` / GitHub OAuth: {hasAuth ? "ok" : hasLocalAdminLogin ? "optional(local direct login enabled)" : "missing"}</li>
               <li>`ADMIN_GITHUB_LOGINS`: {hasAdminWhitelist ? "ok" : "optional"}</li>
-              <li>`admin_users` seed: {hasSeededAdmins ? "ok" : "missing"}</li>
+              <li>`admin_users` seed: {hasSeededAdmins ? "ok" : hasLocalAdminLogin ? "optional(local direct login enabled)" : "missing"}</li>
             </ul>
             <p className="text-sm text-mutedForeground">
               GitHub OAuth 回调地址需要配置为 `{callbackUrl}`，本地开发则使用
@@ -60,10 +63,14 @@ export default async function AdminLayout({
               Admin Access
             </p>
             <p className="text-mutedForeground">
-              这个后台只对 GitHub 白名单管理员开放。登录后，我们会按 `ADMIN_GITHUB_LOGINS`
-              校验访问权限。
+              {hasLocalAdminLogin
+                ? "本地环境可使用管理员直登按钮快速进入后台；线上仍建议使用 GitHub 白名单登录。"
+                : "这个后台只对 GitHub 白名单管理员开放。登录后，我们会按 `ADMIN_GITHUB_LOGINS` 校验访问权限。"}
             </p>
-            <GithubSignInButton />
+            <div className="flex flex-wrap gap-3">
+              {hasAuth ? <GithubSignInButton /> : null}
+              {hasLocalAdminLogin ? <LocalAdminSignInButton /> : null}
+            </div>
           </CyberCard>
         </Container>
       </Section>

@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import remarkGfm from "remark-gfm";
 
 import { CodeBlock } from "@/components/blog/code-block";
+import { MermaidBlock } from "@/components/blog/mermaid-block";
 import { cx } from "@/lib/utils";
 
 type MDXRendererProps = {
@@ -126,16 +127,28 @@ export async function MDXRenderer({ source, className }: MDXRendererProps) {
           />
         );
       },
-      pre: ({ className: preClassName, ...props }) => (
-        <CodeBlock
-          {...props}
-          language={typeof props["data-language"] === "string" ? props["data-language"] : undefined}
-          className={cx(
-            "overflow-x-auto px-4 pb-4 pt-12 text-sm",
-            preClassName
-          )}
-        />
-      ),
+      pre: ({ className: preClassName, ...props }) => {
+        const language =
+          typeof props["data-language"] === "string"
+            ? props["data-language"]
+            : undefined;
+
+        if (language === "mermaid") {
+          const mermaidSource = nodeToText(props.children);
+          return <MermaidBlock source={mermaidSource} />;
+        }
+
+        return (
+          <CodeBlock
+            {...props}
+            language={language}
+            className={cx(
+              "overflow-x-auto px-4 pb-4 pt-12 text-sm",
+              preClassName
+            )}
+          />
+        );
+      },
     },
   });
 

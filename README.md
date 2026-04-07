@@ -18,6 +18,7 @@ Cyberpunk-styled personal technical blog built with `Next.js 16`, `TypeScript`, 
 npm run dev
 npm run build
 npm run lint
+npm run test:smoke
 npm run mcp:blog
 npm run db:import
 npm run db:seed-admins
@@ -41,6 +42,13 @@ If `POSTGRES_URL` is missing, the app falls back to local `content/posts/*.mdx`.
 - `AUTH_GITHUB_SECRET`
 - `ADMIN_GITHUB_LOGINS`
 
+Optional for local development quick access:
+
+- `LOCAL_ADMIN_DIRECT_LOGIN=true`
+- `LOCAL_ADMIN_LOGIN=local-admin`
+
+`LOCAL_ADMIN_DIRECT_LOGIN` is only honored in `development`. Production always uses GitHub OAuth.
+
 GitHub OAuth callback URLs:
 
 - Production: `https://codex-blog-website.vercel.app/api/auth/callback/github`
@@ -58,6 +66,21 @@ GitHub OAuth callback URLs:
 - `UPSTASH_REDIS_REST_URL`
 - `UPSTASH_REDIS_REST_TOKEN`
 
+## Production Service Setup
+
+### Giscus comments
+
+1. Enable GitHub Discussions on the repository you want to use.
+2. Install the Giscus app for that repository.
+3. Create or choose a discussion category.
+4. Copy the repo id and category id into the `NEXT_PUBLIC_GISCUS_*` env vars.
+
+### Upstash page views
+
+1. Create an Upstash Redis database with REST access enabled.
+2. Copy the REST URL and REST token into `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`.
+3. Redeploy so the public blog and `/api/views/[slug]` start serving live counts.
+
 ## Neon Setup
 
 1. Create a free Neon project.
@@ -67,6 +90,44 @@ GitHub OAuth callback URLs:
 
 ```bash
 POSTGRES_URL="your-neon-url" npm run db:import
+```
+
+## Local Postgres With Docker
+
+If you already run Docker locally, you can launch a Postgres service from this repo directly:
+
+```bash
+docker compose up -d postgres
+```
+
+Then set `POSTGRES_URL` in your local env:
+
+```bash
+POSTGRES_URL=postgresql://postgres:postgres@localhost:5432/codex_blog?sslmode=disable
+```
+
+Bootstrap tables and import local MDX posts:
+
+```bash
+npm run db:import
+```
+
+Optional: seed admin users:
+
+```bash
+ADMIN_GITHUB_LOGINS="your-github-login" npm run db:seed-admins
+```
+
+Stop the database:
+
+```bash
+docker compose down
+```
+
+Remove database data volume as well:
+
+```bash
+docker compose down -v
 ```
 
 ## Local MCP Publishing
@@ -174,6 +235,10 @@ npx vercel --prod --yes --archive=tgz
 ```
 
 The repo includes [/.vercelignore](/Users/shenhuanjie/Documents/Projects/codex/codex-blog-website/.vercelignore) to keep deployment uploads small.
+
+## CI
+
+GitHub Actions now runs `npm run lint`, `npm run test:smoke`, and `npm run build` on pushes and pull requests.
 
 ## Admin Launch Checklist
 

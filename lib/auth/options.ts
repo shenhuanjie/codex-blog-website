@@ -1,24 +1,66 @@
 import type { NextAuthOptions } from "next-auth";
+import CredentialsProvider from "next-auth/providers/credentials";
 import GitHubProvider from "next-auth/providers/github";
 
 import { isAdminLogin } from "@/lib/auth/admins";
-import { isAuthConfigured } from "@/lib/env";
+import { getAuthSecret, getLocalAdminLogin, isAuthConfigured, isLocalAdminLoginEnabled } from "@/lib/env";
 
 export const authOptions: NextAuthOptions = {
-  secret: process.env.AUTH_SECRET?.trim(),
-  providers: isAuthConfigured()
-    ? [
-        GitHubProvider({
-          clientId: process.env.AUTH_GITHUB_ID?.trim() ?? "",
-          clientSecret: process.env.AUTH_GITHUB_SECRET?.trim() ?? "",
-        }),
-      ]
-    : [],
+  secret: getAuthSecret(),
+  providers: [
+    ...(isAuthConfigured()
+      ? [
+          GitHubProvider({
+            clientId: process.env.AUTH_GITHUB_ID?.trim() ?? "",
+            clientSecret: process.env.AUTH_GITHUB_SECRET?.trim() ?? "",
+          }),
+        ]
+      : []),
+    ...(isLocalAdminLoginEnabled()
+      ? [
+          CredentialsProvider({
+            id: "local-admin",
+            name: "Local Admin",
+            credentials: {},
+            async authorize() {
+              if (!isLocalAdminLoginEnabled()) {
+                return null;
+              }
+
+              const login = getLocalAdminLogin();
+              return {
+                id: login,
+                name: login,
+                email: `${login}@local.invalid`,
+              };
+            },
+          }),
+        ]
+      : []),
+  ],
   session: {
     strategy: "jwt",
   },
   callbacks: {
-    async jwt({ token, profile, user }) {
+    async jwt({ token, profile, user, account }) {
+      const localAdminLogin = getLocalAdminLogin();
+      const isLocalAdminToken =
+        account?.provider === "local-admin" ||
+        (typeof token.login === "string" && token.login === localAdminLogin);
+
+      if (isLocalAdminToken) {
+        if (!isLocalAdminLoginEnabled()) {
+          token.isAdmin = false;
+          token.authProvider = undefined;
+          return token;
+        }
+
+        token.login = localAdminLogin;
+        token.isAdmin = true;
+        token.authProvider = "local-admin";
+        return token;
+      }
+
       const githubProfile = profile as { login?: unknown } | undefined;
       const profileLogin =
         typeof githubProfile?.login === "string" ? githubProfile.login : undefined;
@@ -29,6 +71,7 @@ export const authOptions: NextAuthOptions = {
       if (login) {
         token.login = login;
         token.isAdmin = await isAdminLogin(login);
+        token.authProvider = "github";
       }
 
       return token;

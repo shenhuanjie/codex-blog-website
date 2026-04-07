@@ -51,25 +51,26 @@ export function McpTokensPanel({ tokens, events }: McpTokensPanelProps) {
           </p>
         </div>
 
-        <form action={formAction} className="flex flex-col gap-3 sm:flex-row">
+        <form action={formAction} className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <div className="min-w-0 flex-1">
             <CyberInput
               name="label"
               placeholder="Claude Desktop / Local Writer"
               autoComplete="off"
               spellCheck={false}
+              aria-label="Token 标签"
               required
             />
           </div>
           <select
             name="scope"
             defaultValue="write"
-            className="cyber-chamfer-sm min-h-11 w-full border border-input bg-input px-3 text-sm text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:w-40"
+            className="cyber-chamfer-sm min-h-11 w-full border border-input bg-input px-3 text-sm text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:w-40 sm:shrink-0"
           >
             <option value="write">write</option>
             <option value="read">read</option>
           </select>
-          <CyberButton type="submit" className="w-full sm:min-w-36" disabled={isPending}>
+          <CyberButton type="submit" className="w-full sm:w-auto sm:min-w-36 sm:shrink-0" disabled={isPending}>
             {isPending ? "生成中..." : "生成 Token"}
           </CyberButton>
         </form>

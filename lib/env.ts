@@ -1,3 +1,7 @@
+export function getAuthSecret(): string | undefined {
+  return process.env.AUTH_SECRET?.trim() || process.env.NEXTAUTH_SECRET?.trim() || undefined;
+}
+
 export function getAdminGithubLogins(): string[] {
   return (process.env.ADMIN_GITHUB_LOGINS ?? "")
     .split(",")
@@ -11,7 +15,7 @@ export function hasAdminWhitelistConfigured(): boolean {
 
 export function isAuthConfigured(): boolean {
   return Boolean(
-    process.env.AUTH_SECRET &&
+    getAuthSecret() &&
       process.env.AUTH_GITHUB_ID &&
       process.env.AUTH_GITHUB_SECRET
   );
@@ -34,4 +38,37 @@ export function isRedisConfigured(): boolean {
 
 export function shouldShowServiceHints(): boolean {
   return process.env.NODE_ENV !== "production";
+}
+
+export function resolveLocalAdminLoginEnabled(
+  rawValue: string | undefined,
+  nodeEnv: string | undefined = process.env.NODE_ENV
+): boolean {
+  if (nodeEnv !== "development") {
+    return false;
+  }
+
+  const raw = rawValue?.trim().toLowerCase();
+
+  if (!raw) {
+    return true;
+  }
+
+  if (raw === "1" || raw === "true" || raw === "yes") {
+    return true;
+  }
+
+  if (raw === "0" || raw === "false" || raw === "no") {
+    return false;
+  }
+
+  return true;
+}
+
+export function isLocalAdminLoginEnabled(): boolean {
+  return resolveLocalAdminLoginEnabled(process.env.LOCAL_ADMIN_DIRECT_LOGIN);
+}
+
+export function getLocalAdminLogin(): string {
+  return (process.env.LOCAL_ADMIN_LOGIN ?? "local-admin").trim().toLowerCase();
 }

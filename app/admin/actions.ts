@@ -5,10 +5,15 @@ import { redirect } from "next/navigation";
 
 import { addAdminUser, removeAdminUser, getAdminUsersCount } from "@/lib/admin/admin-users";
 import { createMcpToken, revokeMcpToken } from "@/lib/admin/mcp-tokens";
+import { getPostSaveFeedback, resolveRequestedPostStatus } from "@/lib/admin/post-workflow";
 import { mergeTags, removeTag, renameTag } from "@/lib/admin/tags";
 import { getAdminSession } from "@/lib/auth/session";
 import { upsertPost, removePost } from "@/lib/admin/posts";
 import { getAdminGithubLogins } from "@/lib/env";
+import { getAdminPostById } from "@/lib/content";
+import type { PostStatus } from "@/lib/db/schema";
+import { previewManagedPost, type ManagedPostPreview } from "@/lib/services/post-publishing";
+import { slugifyTag } from "@/lib/utils";
 
 function requireString(formData: FormData, key: string): string {
   return String(formData.get(key) ?? "");
@@ -16,6 +21,19 @@ function requireString(formData: FormData, key: string): string {
 
 function getIntent(formData: FormData): string {
   return requireString(formData, "_intent").trim();
+}
+
+function getSubmittedStatus(formData: FormData): PostStatus {
+  return requireString(formData, "status") === "published" ? "published" : "draft";
+}
+
+function parseSubmittedTags(input: string): string[] {
+  return [...new Set(
+    input
+      .split(/[\n,]/)
+      .map((item) => item.trim())
+      .filter(Boolean)
+  )];
 }
 
 async function assertAdmin() {
@@ -43,6 +61,38 @@ function redirectWithFeedback(
   redirect(`${path}?${params.toString()}`);
 }
 
+function revalidatePostMutationPaths(input: {
+  nextSlug: string;
+  nextTags: string[];
+  previousSlug?: string | null;
+  previousTags?: string[];
+  adminPostId?: number;
+}) {
+  revalidatePath("/");
+  revalidatePath("/blog");
+  revalidatePath("/admin");
+  revalidatePath("/admin/posts");
+  revalidatePath(`/blog/${input.nextSlug}`);
+
+  if (typeof input.adminPostId === "number") {
+    revalidatePath(`/admin/posts/${input.adminPostId}`);
+  }
+
+  if (input.previousSlug && input.previousSlug !== input.nextSlug) {
+    revalidatePath(`/blog/${input.previousSlug}`);
+  }
+
+  const affectedTagSlugs = new Set(
+    [...(input.previousTags ?? []), ...input.nextTags]
+      .map((tag) => slugifyTag(tag))
+      .filter(Boolean)
+  );
+
+  for (const tagSlug of affectedTagSlugs) {
+    revalidatePath(`/blog/tag/${tagSlug}`);
+  }
+}
+
 export type CreateMcpTokenActionState = {
   kind: "idle" | "success" | "error";
   message?: string;
@@ -51,22 +101,56 @@ export type CreateMcpTokenActionState = {
   scope?: "read" | "write";
 };
 
+export type AnalyzeDraftActionState = {
+  kind: "idle" | "success" | "error";
+  message?: string;
+  preview?: ManagedPostPreview;
+};
+
+export async function analyzeDraftAction(
+  _previousState: AnalyzeDraftActionState,
+  formData: FormData
+): Promise<AnalyzeDraftActionState> {
+  try {
+    await assertAdmin();
+
+    const preview = await previewManagedPost({
+      title: requireString(formData, "title"),
+      slug: requireString(formData, "slug") || undefined,
+      summary: requireString(formData, "summary") || undefined,
+      tags: parseSubmittedTags(requireString(formData, "tags")),
+      content: requireString(formData, "content"),
+      cover: requireString(formData, "cover") || undefined,
+    });
+
+    return {
+      kind: "success",
+      message: "Draft analysis updated.",
+      preview,
+    };
+  } catch (error) {
+    return {
+      kind: "error",
+      message: error instanceof Error ? error.message : "Failed to analyze draft.",
+    };
+  }
+}
+
 export async function savePostAction(formData: FormData) {
   await assertAdmin();
   const rawId = requireString(formData, "id");
   const intent = getIntent(formData);
-  const statusField = requireString(formData, "status") as "draft" | "published";
-  const nextStatus =
-    intent === "publish"
-      ? "published"
-      : intent === "draft"
-        ? "draft"
-        : statusField;
+  const submittedStatus = getSubmittedStatus(formData);
+  const nextStatus = resolveRequestedPostStatus(intent, submittedStatus);
+  const slug = requireString(formData, "slug");
+  const normalizedSlug = slugifyTag(slug);
+  const tags = parseSubmittedTags(requireString(formData, "tags"));
+  const previousPost = rawId ? await getAdminPostById(Number(rawId)) : null;
 
   const id = await upsertPost({
     id: rawId ? Number(rawId) : undefined,
     title: requireString(formData, "title"),
-    slug: requireString(formData, "slug"),
+    slug: normalizedSlug,
     summary: requireString(formData, "summary"),
     cover: requireString(formData, "cover"),
     content: requireString(formData, "content"),
@@ -74,38 +158,31 @@ export async function savePostAction(formData: FormData) {
     status: nextStatus,
   });
 
-  revalidatePath("/");
-  revalidatePath("/blog");
-  revalidatePath("/admin");
-  revalidatePath("/admin/posts");
-  revalidatePath(`/blog/${requireString(formData, "slug")}`);
-  redirectWithFeedback(`/admin/posts/${id}`, {
-    kind: "success",
-    scope: "post-save",
-    message:
-      nextStatus === "published"
-        ? "Article is published and the public route has been refreshed."
-        : "Draft saved. The post is still hidden from the public blog.",
+  revalidatePostMutationPaths({
+    nextSlug: normalizedSlug,
+    nextTags: tags,
+    previousSlug: previousPost?.slug,
+    previousTags: previousPost?.tags,
+    adminPostId: id,
   });
+  redirectWithFeedback(`/admin/posts/${id}`, getPostSaveFeedback(nextStatus, "redirect"));
 }
 
 export async function savePostAndStayAction(formData: FormData) {
   await assertAdmin();
   const rawId = requireString(formData, "id");
-  const slug = requireString(formData, "slug");
   const intent = getIntent(formData);
-  const statusField = requireString(formData, "status") as "draft" | "published";
-  const nextStatus =
-    intent === "publish"
-      ? "published"
-      : intent === "draft"
-        ? "draft"
-        : statusField;
+  const submittedStatus = getSubmittedStatus(formData);
+  const nextStatus = resolveRequestedPostStatus(intent, submittedStatus);
+  const slug = requireString(formData, "slug");
+  const normalizedSlug = slugifyTag(slug);
+  const tags = parseSubmittedTags(requireString(formData, "tags"));
+  const previousPost = rawId ? await getAdminPostById(Number(rawId)) : null;
 
   const id = await upsertPost({
     id: rawId ? Number(rawId) : undefined,
     title: requireString(formData, "title"),
-    slug,
+    slug: normalizedSlug,
     summary: requireString(formData, "summary"),
     cover: requireString(formData, "cover"),
     content: requireString(formData, "content"),
@@ -113,19 +190,14 @@ export async function savePostAndStayAction(formData: FormData) {
     status: nextStatus,
   });
 
-  revalidatePath("/");
-  revalidatePath("/blog");
-  revalidatePath("/admin");
-  revalidatePath("/admin/posts");
-  revalidatePath(`/blog/${slug}`);
-  redirectWithFeedback(`/admin/posts/${id}`, {
-    kind: "success",
-    scope: "post-save",
-    message:
-      nextStatus === "published"
-        ? "Article updated in published mode."
-        : "Draft updated. You can keep editing before publishing.",
+  revalidatePostMutationPaths({
+    nextSlug: normalizedSlug,
+    nextTags: tags,
+    previousSlug: previousPost?.slug,
+    previousTags: previousPost?.tags,
+    adminPostId: id,
   });
+  redirectWithFeedback(`/admin/posts/${id}`, getPostSaveFeedback(nextStatus, "stay"));
 }
 
 export async function deletePostAction(formData: FormData) {
@@ -137,16 +209,31 @@ export async function deletePostAction(formData: FormData) {
     throw new Error("Invalid post id");
   }
 
+  const existingPost = await getAdminPostById(id);
   await removePost(id);
 
   revalidatePath("/");
   revalidatePath("/blog");
   revalidatePath("/admin");
   revalidatePath("/admin/posts");
+  revalidatePath(`/admin/posts/${id}`);
+
+  if (existingPost) {
+    revalidatePath(`/blog/${existingPost.slug}`);
+
+    for (const tag of existingPost.tags) {
+      const tagSlug = slugifyTag(tag);
+
+      if (tagSlug) {
+        revalidatePath(`/blog/tag/${tagSlug}`);
+      }
+    }
+  }
+
   redirectWithFeedback("/admin/posts", {
     kind: "success",
     scope: "post-delete",
-    message: "Article deleted.",
+    message: "Article deleted. Related previews and tag pages were refreshed.",
   });
 }
 

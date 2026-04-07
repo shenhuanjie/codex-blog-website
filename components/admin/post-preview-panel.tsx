@@ -3,6 +3,7 @@ import Link from "next/link";
 import { MDXRenderer } from "@/components/blog/mdx-renderer";
 import { CyberCard } from "@/components/ui/cyber-card";
 import { TagChip } from "@/components/ui/tag-chip";
+import { getPostPreviewHref, getPostPreviewLabel } from "@/lib/admin/post-workflow";
 import type { PostRecord } from "@/lib/content";
 import { formatDate } from "@/lib/utils";
 import { slugifyTag } from "@/lib/utils";
@@ -25,10 +26,8 @@ export function PostPreviewPanel({ post }: PostPreviewPanelProps) {
     );
   }
 
-  const canOpenPublicPreview = post.status === "published";
-  const previewHref = canOpenPublicPreview
-    ? `/blog/${post.slug}`
-    : `/blog/${post.slug}?preview=draft`;
+  const previewHref = getPostPreviewHref(post);
+  const previewLabel = getPostPreviewLabel(post.status);
 
   return (
     <CyberCard variant="holographic" className="space-y-6">
@@ -41,6 +40,9 @@ export function PostPreviewPanel({ post }: PostPreviewPanelProps) {
             {post.status}
           </span>
         </div>
+        <p className="text-xs uppercase tracking-[0.16em] text-mutedForeground">
+          这里显示最近一次保存后的内容，未保存改动不会同步到预览。
+        </p>
         <p className="font-heading text-2xl uppercase tracking-[0.12em] text-foreground">
           {post.title}
         </p>
@@ -60,7 +62,7 @@ export function PostPreviewPanel({ post }: PostPreviewPanelProps) {
             rel="noreferrer"
             className="inline-flex min-h-11 w-full items-center justify-center text-center text-xs uppercase tracking-[0.2em] text-accent transition-colors hover:text-accentSecondary sm:w-auto"
           >
-            {canOpenPublicPreview ? "Open Public Preview" : "Open Draft Preview"}
+            {previewLabel}
           </Link>
         </div>
         <div className="flex flex-wrap gap-2">

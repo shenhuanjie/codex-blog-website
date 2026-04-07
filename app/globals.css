@@ -308,6 +308,53 @@ a {
   line-height: 1.75;
 }
 
+.mermaid-shell {
+  margin-top: 0;
+  display: inline-block;
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  background: #090a10;
+  box-shadow: var(--box-shadow-neon-sm);
+}
+
+.mermaid-inner {
+  min-width: fit-content;
+  padding: 1rem;
+}
+
+.mermaid-inner svg {
+  display: block;
+  height: auto;
+  max-width: 100%;
+}
+
+.code-figure:has(.mermaid-shell) {
+  overflow: visible;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.mermaid-loading,
+.mermaid-error {
+  margin: 0;
+  padding: 1rem;
+  font-size: 0.875rem;
+  color: var(--mutedForeground);
+}
+
+.mermaid-error {
+  color: var(--destructive);
+}
+
+.mermaid-fallback {
+  margin: 0;
+  overflow-x: auto;
+  padding: 0 1rem 1rem 1rem;
+  font-size: 0.875rem;
+}
+
 .admin-shell {
   position: relative;
 }
